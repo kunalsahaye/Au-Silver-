@@ -33,7 +33,8 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").repla
 export async function getProducts(): Promise<Product[]> {
   await ready();
   if (sb) {
-    const { data } = await sb.from("products").select("*").order("created_at", { ascending: false });
+    const { data, error } = await sb.from("products").select("*").order("created_at", { ascending: false });
+    if (error) console.error("[db] products:", error.message);
     return (data as Product[]) ?? [];
   }
   return load().products;
