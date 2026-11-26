@@ -9,6 +9,8 @@ const tiles = [
   { href: "/admin/categories", title: "Categories", text: "Menu, category photos", icon: "▦" },
   { href: "/admin/pages", title: "Pages", text: "About, Contact, FAQ", icon: "¶" },
   { href: "/admin/settings", title: "Shop settings", text: "Offers, shipping, Instagram", icon: "⚙" },
+  { href: "/admin/seo", title: "Google and SEO", text: "Search, Maps, Shopping, sharing", icon: "G" },
+  { href: "/admin/words", title: "Words on the site", text: "Buttons, headings, messages", icon: "Aa" },
   { href: "/admin/orders", title: "Orders", text: "New orders and their status", icon: "☰" },
   { href: "/", title: "View the shop", text: "Opens your live website", icon: "↗", external: true },
 ];

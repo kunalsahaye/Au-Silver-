@@ -18,7 +18,7 @@ export default async function Slides({ searchParams }: Q) {
           { key: "title", label: "Headline", type: "text", placeholder: "e.g. The Winter Edit" },
           { key: "sub", label: "Small text", type: "text", placeholder: "Optional" },
           { key: "cta", label: "Button text", type: "text", half: true, placeholder: "e.g. Shop now" },
-          { key: "href", label: "Button goes to", type: "text", half: true, placeholder: "/shop?cat=rings", hint: "A page on your shop, e.g. /shop or /shop?cat=rings" },
+          { key: "href", label: "Button goes to", type: "text", half: true, placeholder: "/shop/rings", hint: "A page on your shop, e.g. /shop or /shop/rings" },
         ]} />
     </EditorForm>
   );

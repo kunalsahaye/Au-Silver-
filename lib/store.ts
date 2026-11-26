@@ -5,7 +5,7 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { defaultContent, defaultSections, defaultSettings, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
-import type { Content, Enquiry, Order, PageView, Product, SiteSettings } from "./types";
+import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, SiteSettings } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,7 +31,7 @@ const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /* ---------- products ---------- */
-const withImages = (p: Product): Product => ({ ...p, images: Array.isArray(p.images) ? p.images : [] });
+const withImages = (p: Product): Product => ({ ...p, images: Array.isArray(p.images) ? p.images : [], seo: p.seo && typeof p.seo === "object" ? p.seo : {} });
 export async function getProducts(): Promise<Product[]> {
   await ready();
   if (sb) {
@@ -58,6 +58,7 @@ export async function saveProduct(input: Partial<Product> & { name: string }) {
     finish: input.finish ?? "",
     image_url: input.image_url || null,
     images: (input.images ?? []).filter(Boolean).slice(0, 12),
+    seo: input.seo ?? {},
     featured: !!input.featured,
     bestseller: !!input.bestseller,
     stock: Number(input.stock) || 0,
@@ -138,6 +139,11 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   const seen = new Set(out.sections.map((x) => x.key));
   out.sections = [...out.sections.filter((x) => defaultSections.some((d) => d.key === x.key)), ...defaultSections.filter((d) => !seen.has(d.key))];
   if (!out.categories.length) out.categories = base.categories;
+  const blankCat = { parent: "", description: "", seoTitle: "", seoDescription: "", image: "", inMenu: false };
+  const blankPage = { seoTitle: "", seoDescription: "", image: "", inMenu: false, body: "" };
+  out.categories = out.categories.map((x: Partial<CategoryItem>) => ({ ...blankCat, ...x }) as CategoryItem);
+  out.pages = out.pages.map((x: Partial<PageItem>) => ({ ...blankPage, ...x }) as PageItem);
+  out.words = out.words ?? {};
   return out;
 }
 

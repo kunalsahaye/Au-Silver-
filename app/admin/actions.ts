@@ -32,6 +32,10 @@ export async function upsertProduct(fd: FormData) {
     price: Math.max(0, Number(s(fd, "price")) || 0), stock: Math.max(0, Math.floor(Number(s(fd, "stock")) || 0)),
     description: s(fd, "description"), material: s(fd, "material"), finish: s(fd, "finish"),
     image_url: images[0] ?? null, images: images.slice(1),
+    seo: {
+      title: s(fd, "seoTitle").slice(0, 70), description: s(fd, "seoDescription").slice(0, 170),
+      alt: s(fd, "alt").slice(0, 150), sku: s(fd, "sku").slice(0, 40),
+    },
     featured: fd.get("featured") === "on", bestseller: fd.get("bestseller") === "on",
   });
   revalidatePath("/", "layout");

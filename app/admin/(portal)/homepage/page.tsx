@@ -43,7 +43,8 @@ export default async function Homepage({ searchParams }: Q) {
       </Box>
       <Box title="Our process">
         <Text name="processTitle" label="Headline" value={s.processTitle} hint="The text beside it is the first paragraph of your About page." />
-        <ImageField name="img7" label="Photo" defaultValue={s.img7} />
+        <ImageField name="img7" label="Large photo" defaultValue={s.img7} />
+        <ImageField name="img9" label="Small photo in the middle (empty shows a ring drawing)" defaultValue={s.img9} />
       </Box>
     </EditorForm>
   );

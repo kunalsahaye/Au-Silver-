@@ -10,17 +10,21 @@ export default async function Categories({ searchParams }: Q) {
   const count = (slug: string) => products.filter((p) => p.category === slug).length;
   return (
     <EditorForm title="Categories" q={q} action={saveCategories}
-      intro="The groups your products sit in. Their order here is their order in the shop menu and on the homepage.">
+      intro="The groups your products sit in. A category can sit inside another one (for example Studs inside Earrings). The order here is the order in the shop menu and on the homepage.">
       <ListEditor name="items" titleKey="name" addLabel="Add a category"
         items={c.categories.map((x) => ({ ...x }))}
-        blank={{ slug: "", name: "", image: "", inMenu: true }}
+        blank={{ slug: "", name: "", image: "", inMenu: true, parent: "", description: "", seoTitle: "", seoDescription: "" }}
         fields={[
           { key: "name", label: "Name", type: "text", half: true, placeholder: "e.g. Anklets" },
-          { key: "slug", label: "Web address", type: "text", half: true, hint: "Made from the name if blank. Changing it moves products out of this category." },
+          { key: "parent", label: "Sits inside", type: "select", half: true, options: [["", "Nothing (main category)"], ...c.categories.filter((x) => !x.parent).map((x): [string, string] => [x.slug, x.name])], hint: "Pick a main category to make this a sub-category, e.g. Studs inside Earrings." },
           { key: "image", label: "Category photo", type: "photo" },
-          { key: "inMenu", label: "Show in the top menu", type: "check" },
+          { key: "description", label: "Short description (shown at the top of the category page and used by Google)", type: "textarea" },
+          { key: "slug", label: "Web address", type: "text", half: true, hint: "Made from the name if blank. Changing it moves products out of this category." },
+          { key: "inMenu", label: "Show in the top menu", type: "check", half: true },
+          { key: "seoTitle", label: "Title on Google (optional, up to 60 letters)", type: "text", half: true },
+          { key: "seoDescription", label: "Description on Google (optional, up to 160 letters)", type: "text", half: true },
         ]} />
-      <p className="text-sm opacity-60">Products per category: {c.categories.map((x) => `${x.name} ${count(x.slug)}`).join(" · ")}</p>
+      <p className="text-sm opacity-60">Products per category: {c.categories.map((x) => `${x.parent ? "— " : ""}${x.name} ${count(x.slug)}`).join(" · ")}</p>
     </EditorForm>
   );
 }

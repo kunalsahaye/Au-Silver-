@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { orderStatus } from "../../actions";
 import { getOrders, getSettings } from "@/lib/store";
 import { money } from "@/lib/format";
@@ -15,8 +16,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
       <p className="mb-4 text-sm opacity-60">Stock is taken out when an order is placed. Setting an order to cancelled puts its pieces back in stock.</p>
       {soldout && <p className="mb-4 rounded-xl bg-burgundy/10 p-3 text-sm text-burgundy">Could not reopen that order: {soldout} no longer has enough stock.</p>}
       <nav className="mb-5 flex flex-wrap gap-2 text-sm">
-        <a href="/admin/orders" className={`rounded-full px-3 py-1 ${!status ? "bg-ink text-ivory" : "bg-white"}`}>All ({all.length})</a>
-        {STATUSES.map((st) => <a key={st} href={`/admin/orders?status=${st}`} className={`rounded-full px-3 py-1 capitalize ${status === st ? "bg-ink text-ivory" : "bg-white"}`}>{st} ({count(st)})</a>)}
+        <Link href="/admin/orders" className={`rounded-full px-3 py-1 ${!status ? "bg-ink text-ivory" : "bg-white"}`}>All ({all.length})</Link>
+        {STATUSES.map((st) => <Link key={st} href={`/admin/orders?status=${st}`} className={`rounded-full px-3 py-1 capitalize ${status === st ? "bg-ink text-ivory" : "bg-white"}`}>{st} ({count(st)})</Link>)}
       </nav>
       <div className="space-y-3">
         {list.map((o) => (

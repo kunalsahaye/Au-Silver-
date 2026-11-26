@@ -23,7 +23,7 @@ export default function Slider({ slides }: { slides: Slide[] }) {
           {s.kind === "video"
             ? <video src={s.media} autoPlay muted loop playsInline className="h-full w-full object-cover" />
             // eslint-disable-next-line @next/next/no-img-element
-            : s.media ? <img src={s.media} alt={s.title} className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gradient-to-br from-[#c9a27a] to-[#6a4630]" />}
+            : s.media ? <img src={s.media} alt={s.title} loading={k === 0 ? "eager" : "lazy"} decoding="async" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gradient-to-br from-[#c9a27a] to-[#6a4630]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
           <div className="absolute inset-x-0 bottom-20 px-6 text-center text-white">
             {s.title && <h2 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-[-0.05em] uppercase md:text-7xl">{s.title}</h2>}
