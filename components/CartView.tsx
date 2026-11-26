@@ -4,15 +4,19 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { placeOrder } from "@/app/actions";
 import { useCart } from "@/components/CartProvider";
-import { money } from "@/lib/format";
+import { money, shippingFor } from "@/lib/format";
 
 export interface Live { name: string; price: number; stock: number }
 
-function Inner({ currency, live }: { currency: string; live: Record<string, Live> }) {
+type Ship = { shippingFee: string; freeShippingOver: string };
+function Inner({ currency, live, shipping }: { currency: string; live: Record<string, Live>; shipping: Ship }) {
   const { lines: saved, setQty, clear } = useCart();
   // Show today's names, prices and stock from the shop, not what was saved in the browser.
   const lines = saved.filter((l) => live[l.slug]).map((l) => ({ ...l, ...live[l.slug], qty: Math.min(l.qty, live[l.slug].stock) })).filter((l) => l.qty > 0);
-  const total = lines.reduce((a, b) => a + b.price * b.qty, 0);
+  const subtotal = lines.reduce((a, b) => a + b.price * b.qty, 0);
+  const ship = shippingFor(subtotal, shipping);
+  const total = subtotal + ship;
+  const freeOver = shipping.freeShippingOver === "" ? null : Number(shipping.freeShippingOver);
   const fmt = (n: number) => money(currency, n);
   const sp = useSearchParams();
   const soldOut = sp.get("soldout");
@@ -52,7 +56,12 @@ function Inner({ currency, live }: { currency: string; live: Record<string, Live
           <input name="email" type="email" placeholder="Email" className="field" required />
           <input name="phone" placeholder="Phone" className="field" />
           <textarea name="address" rows={3} placeholder="Delivery address" className="field" required />
-          <div className="flex justify-between border-t border-ink/10 pt-4 text-lg"><span>Total</span><span>{fmt(total)}</span></div>
+          <div className="space-y-1 border-t border-ink/10 pt-4 text-sm">
+            <div className="flex justify-between"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div className="flex justify-between"><span>Shipping</span><span>{ship ? fmt(ship) : "Free"}</span></div>
+            {ship > 0 && freeOver !== null && <p className="text-xs opacity-60">Add {fmt(freeOver - subtotal)} more for free shipping.</p>}
+          </div>
+          <div className="flex justify-between text-lg"><span>Total</span><span>{fmt(total)}</span></div>
           <button className="btn btn-dark w-full">Place order</button>
           <p className="text-xs opacity-50">We will contact you to confirm and arrange payment.</p>
         </form>
@@ -60,4 +69,4 @@ function Inner({ currency, live }: { currency: string; live: Record<string, Live
     </div>
   );
 }
-export default function CartView(props: { currency: string; live: Record<string, Live> }) { return <Suspense><Inner {...props} /></Suspense>; }
+export default function CartView(props: { currency: string; live: Record<string, Live>; shipping: Ship }) { return <Suspense><Inner {...props} /></Suspense>; }

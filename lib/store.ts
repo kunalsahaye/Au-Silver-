@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { defaultSettings, seedProducts } from "./seed";
+import { defaultContent, defaultSections, defaultSettings, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
-import type { Enquiry, Order, PageView, Product, SiteSettings } from "./types";
+import type { Content, Enquiry, Order, PageView, Product, SiteSettings } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,6 +18,7 @@ const ready = () => (sb ? ensureSchema() : Promise.resolve());
 interface Demo {
   products: Product[]; settings: SiteSettings;
   enquiries: Enquiry[]; orders: Order[]; views: PageView[];
+  kv?: Record<string, unknown>;
 }
 const FILE = path.join(os.tmpdir(), `demo-${path.basename(process.cwd())}.json`);
 function load(): Demo {
@@ -30,14 +31,15 @@ const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /* ---------- products ---------- */
+const withImages = (p: Product): Product => ({ ...p, images: Array.isArray(p.images) ? p.images : [] });
 export async function getProducts(): Promise<Product[]> {
   await ready();
   if (sb) {
     const { data, error } = await sb.from("products").select("*").order("created_at", { ascending: false });
     if (error) console.error("[db] products:", error.message);
-    return (data as Product[]) ?? [];
+    return ((data as Product[]) ?? []).map(withImages);
   }
-  return load().products;
+  return load().products.map(withImages);
 }
 export async function getProduct(slug: string) {
   await ready();
@@ -55,6 +57,7 @@ export async function saveProduct(input: Partial<Product> & { name: string }) {
     material: input.material ?? "",
     finish: input.finish ?? "",
     image_url: input.image_url || null,
+    images: (input.images ?? []).filter(Boolean).slice(0, 12),
     featured: !!input.featured,
     bestseller: !!input.bestseller,
     stock: Number(input.stock) || 0,
@@ -99,6 +102,67 @@ export async function saveSettings(s: SiteSettings) {
     return;
   }
   const d = load(); d.settings = s; save(d);
+}
+
+/* ---------- editable content with draft and publish ---------- */
+// Live content lives in settings rows "site" (texts, photos, shop details) and "content" (everything else).
+// Unpublished edits live in one "draft" row until the owner presses Publish.
+async function kvGet<T>(k: string): Promise<T | null> {
+  await ready();
+  if (sb) {
+    const { data, error } = await sb.from("settings").select("value").eq("key", k).maybeSingle();
+    if (error) console.error(`[db] settings ${k}:`, error.message);
+    return (data?.value as T) ?? null;
+  }
+  return (load().kv?.[k] as T) ?? null;
+}
+async function kvSet(k: string, value: unknown) {
+  await ready();
+  if (sb) {
+    const { error } = await sb.from("settings").upsert({ key: k, value });
+    if (error) throw new Error(`Could not save: ${error.message}`);
+    return;
+  }
+  const d = load(); d.kv = { ...(d.kv ?? {}), [k]: value }; save(d);
+}
+async function kvDelete(k: string) {
+  await ready();
+  if (sb) { await sb.from("settings").delete().eq("key", k); return; }
+  const d = load(); if (d.kv) delete d.kv[k]; save(d);
+}
+
+/** Fills gaps with defaults so older saved content keeps working when new fields are added. */
+function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
+  const base = defaultContent(site);
+  const out: Content = { ...base, ...(c ?? {}), site: { ...defaultSettings, ...(c?.site ?? site) } };
+  const seen = new Set(out.sections.map((x) => x.key));
+  out.sections = [...out.sections.filter((x) => defaultSections.some((d) => d.key === x.key)), ...defaultSections.filter((d) => !seen.has(d.key))];
+  if (!out.categories.length) out.categories = base.categories;
+  return out;
+}
+
+/** What visitors see now. */
+export async function getContent(): Promise<Content> {
+  const [site, rest] = await Promise.all([getSettings(), kvGet<Partial<Content>>("content")]);
+  return normalize({ ...(rest ?? {}), site }, site);
+}
+/** The owner's working copy: the draft if there is one, otherwise the live content. */
+export async function getDraft(): Promise<{ content: Content; unpublished: boolean }> {
+  const [live, draft] = await Promise.all([getContent(), kvGet<Partial<Content>>("draft")]);
+  return draft ? { content: normalize(draft, live.site), unpublished: true } : { content: live, unpublished: false };
+}
+export async function saveDraft(c: Content) { await kvSet("draft", c); }
+export async function discardDraft() { await kvDelete("draft"); }
+/** Makes the draft live. */
+export async function publishDraft() {
+  const draft = await kvGet<Partial<Content>>("draft");
+  if (!draft) return;
+  const live = await getContent();
+  const c = normalize(draft, live.site);
+  const { site, ...rest } = c;
+  await kvSet("content", rest);
+  await saveSettings(site);
+  await kvDelete("draft");
 }
 
 /* ---------- enquiries ---------- */
@@ -214,4 +278,33 @@ export async function getViews(): Promise<PageView[]> {
     return (data as PageView[]) ?? [];
   }
   return load().views;
+}
+
+/* ---------- moving photos between storage services ---------- */
+const KV_KEYS = ["site", "content", "draft"];
+/** Every photo or video address used by products and site content that matches `re`. */
+export async function findMediaUrls(re: RegExp): Promise<string[]> {
+  const found = new Set<string>();
+  const scan = (text: string) => { for (const m of text.matchAll(/https?:\/\/[^\s"'\\)]+/g)) if (re.test(m[0])) found.add(m[0]); };
+  for (const p of await getProducts()) scan(JSON.stringify([p.image_url, p.images]));
+  for (const k of KV_KEYS) { const v = await kvGet<unknown>(k); if (v) scan(JSON.stringify(v)); }
+  return [...found];
+}
+/** Swaps old addresses for new ones everywhere they are used. */
+export async function replaceMediaUrls(map: Record<string, string>) {
+  const swap = (text: string) => Object.entries(map).reduce((t, [a, b]) => t.split(a).join(b), text);
+  for (const p of await getProducts()) {
+    const before = JSON.stringify([p.image_url, p.images]);
+    const after = swap(before);
+    if (after === before) continue;
+    const [image_url, images] = JSON.parse(after) as [string | null, string[]];
+    if (sb) await sb.from("products").update({ image_url, images }).eq("id", p.id);
+    else { const d = load(); d.products = d.products.map((x) => (x.id === p.id ? { ...x, image_url, images } : x)); save(d); }
+  }
+  for (const k of KV_KEYS) {
+    const v = await kvGet<unknown>(k);
+    if (!v) continue;
+    const before = JSON.stringify(v), after = swap(before);
+    if (after !== before) await kvSet(k, JSON.parse(after));
+  }
 }

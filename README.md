@@ -1,23 +1,27 @@
-# Au Silver website (Next.js on Vercel)
+# Au Silver website (Next.js)
 
-A jewellery storefront with a built-in admin dashboard that works as the site's CMS.
+A jewellery storefront with a built-in admin dashboard that works as the site's CMS. Runs on any Node.js host (Hostinger Business or Cloud, Vercel, a VPS).
 
-- **Shop**: home, collections, product pages, bag and checkout (orders are confirmed and paid offline for now), contact form.
-- **Dashboard** (`/admin`): visits, revenue, latest orders, low stock, enquiries.
-- **Products**: add, edit, search, filter, upload a photo, set price and stock, mark featured or bestseller.
-- **Orders**: filter by status and update it. Stock is taken out when an order is placed and put back if it is cancelled.
-- **Enquiries**: messages from the contact form, with status.
-- **Site content**: brand, all home and about page text, contact details, currency, and eight uploadable photos.
-- Two logins: **admin** (you, can delete products) and **client** (the shop owner).
+- **Shop**: homepage (slides, bestsellers, categories, story, happy customers), collections, product pages with photo galleries, bag and checkout with shipping charges (orders are confirmed and paid offline for now), contact form, and any extra pages you add (FAQ, Care guide …).
+- **Admin home** (`/admin`): big tap-friendly tiles (made for iPad), then visits, revenue, latest orders, low stock, enquiries.
+- **Products**: add, edit, search, filter, several photos each, price, stock, category, featured or bestseller. Changes go live straight away.
+- **Homepage**: turn sections on or off and reorder them; edit headlines and photos.
+- **Slides**: photos or videos at the top of the homepage, each with a headline and button.
+- **Happy customers**: customer photo or video, name, note and stars.
+- **Categories**: add, rename, reorder, set a photo, choose which appear in the menu.
+- **Pages**: About, Contact, FAQ and your own pages.
+- **Shop settings**: name, offer banner, shipping charge and free-shipping amount, currency, contact details, Instagram.
+- **Draft and Publish**: homepage, slides, customers, categories, pages and settings save as a draft. Press **Preview** to see the shop with your changes, then **Publish**.
+- **Orders** and **Enquiries** with status. Stock is taken out when an order is placed and put back if it is cancelled.
+- Two logins: **admin** (can delete products, move photos) and **client** (the shop owner).
 
 ## Services used
 
-| Need | Service | How it connects |
+| Need | Service | Variables |
 | --- | --- | --- |
-| Hosting | Vercel | Import the Git repository |
-| Database (products, orders, content) | Supabase via Vercel Marketplace | Vercel > Storage > Create > Supabase. Adds the env vars |
-| Image uploads | Vercel Blob | Vercel > Storage > Create > Blob. Adds `BLOB_READ_WRITE_TOKEN` |
-| Email alerts (optional) | Resend | `RESEND_API_KEY`, `ALERT_EMAIL_TO` |
+| Database (products, orders, content) | Supabase | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `POSTGRES_URL_NON_POOLING` so tables are created automatically |
+| Photo and video uploads | Supabase Storage (same project; a public `media` bucket is created automatically) | none extra |
+| Email alerts (optional) | Resend | `RESEND_API_KEY`, `ALERT_EMAIL_TO`, `ALERT_EMAIL_FROM` |
 
 Without a database the site runs in **demo mode** (data in a temporary file that can vanish). Fine for local testing, not for a live shop.
 
@@ -28,23 +32,30 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000/admin and sign in with `admin@demo.com` / `admin123`. These demo logins only exist in `npm run dev` when no logins are set, and never on a production build. Without Blob, uploaded photos are saved to `public/uploads` (local only).
+Open http://localhost:3000/admin and sign in with `admin@demo.com` / `admin123`. These demo logins only exist in `npm run dev` when no logins are set, and never on a production build. Without Supabase, uploads are saved to `public/uploads` (local only).
 
-## Go live on Vercel
+## Host on Hostinger (Business or Cloud plan)
 
-1. Push this repository to GitHub and import it in Vercel (Add New > Project). The defaults for Next.js are correct.
-2. In the Vercel project, **Storage > Create Database > Supabase**, connect it to the project. The site creates its tables automatically on first use (it uses `POSTGRES_URL_NON_POOLING`, which the integration adds). Without that variable, paste `supabase/schema.sql` into Supabase's SQL Editor and run it.
-3. **Storage > Create > Blob**, connect it to the project (public access).
-4. **Settings > Environment Variables**: add `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CLIENT_EMAIL`, `CLIENT_PASSWORD`, `SESSION_SECRET` (see `.env.example`).
-5. Redeploy. Sign in at `https://<your-site>/admin`, add products and photos, and edit the site content.
+1. hPanel > **Websites > Add website > Node.js Web App > Import Git repository**. Connect GitHub and pick this repository and the `main` branch.
+2. Build settings: framework **Next.js**, Node **22.x**, package manager **npm**, build command `npm run build`. Leave the rest as detected.
+3. **Environment variables** (see `.env.example`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL_NON_POOLING`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CLIENT_EMAIL`, `CLIENT_PASSWORD`, `SESSION_SECRET`, and the optional Resend ones. Find the Supabase values in Supabase > Project settings > API (URL, service_role key) and > Database > Connection string (direct connection, port 5432).
+4. Deploy. Check `https://<temporary address>/api/health`: database should be `supabase` and photoStorage `supabase`.
+5. Connect your domain in the website's settings. Every push to `main` redeploys automatically.
 
-If the login page says "The portal is not set up yet", one of the step 4 variables is missing.
-If the dashboard says "Photo uploads are off", the Blob store is not connected.
+Hostinger replaces the app's files on every deploy, which is why photos live in Supabase Storage and not on the server.
+
+## Host on Vercel
+
+Import the repository in Vercel, add the same environment variables (or connect Supabase from Vercel > Storage, which adds them), and deploy.
+
+## Moving photos off Vercel Blob
+
+Older versions stored photos in Vercel Blob. After connecting Supabase, open **Shop settings**: if any photos are still on Vercel, a **Move photos now** button copies them into Supabase Storage and updates every product and page that uses them.
 
 ## Updating an existing Supabase database
 
-`supabase/schema.sql` is safe to run again. It adds the `place_order` and `adjust_stock` functions used by checkout.
+The site updates its own tables on start-up (it adds the `images` column for product galleries). `supabase/schema.sql` is also safe to run by hand in Supabase's SQL Editor.
 
 ## Reskin for a new client
 
-Edit `lib/seed.ts` (default copy and products) and the colours in `app/globals.css`, or change everything from `/admin/content` and `/admin/products` after deploying.
+Edit `lib/seed.ts` (default copy, categories, pages and products) and the colours in `app/globals.css`, or change everything from `/admin` after deploying.

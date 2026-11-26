@@ -1,4 +1,4 @@
-import type { Product, SiteSettings } from "./types";
+import type { CategoryItem, Content, Customer, PageItem, Product, Section, SiteSettings, Slide } from "./types";
 
 export const defaultSettings: SiteSettings = {
   brand: "Au Silver",
@@ -17,6 +17,8 @@ export const defaultSettings: SiteSettings = {
   address: "Add your store address in the portal",
   instagram: "@aussilver",
   currency: "₹",
+  shippingFee: "0",
+  freeShippingOver: "",
   img1: "", img2: "", img3: "", img4: "", img5: "", img6: "", img7: "", img8: "",
 };
 
@@ -28,7 +30,7 @@ const p = (
 ): Product => ({
   id: slug, slug, name, category, metal: "silver", price, description,
   material: "925 Sterling Silver", finish,
-  image_url: null, featured, bestseller, stock: 25, created_at: d,
+  image_url: null, images: [], featured, bestseller, stock: 25, created_at: d,
 });
 
 export const seedProducts: Product[] = [
@@ -45,3 +47,34 @@ export const seedProducts: Product[] = [
   p("fluid-pendant", "Fluid Pendant", "necklaces", 2890, "A liquid-metal pendant that moves with you. Wear it long or short.", "Mirror finish"),
   p("coin-chain", "Coin Chain", "necklaces", 2490, "A classic coin pendant on a sturdy silver chain.", "Polished"),
 ];
+
+/* ---------- default editable content (used until the owner edits it) ---------- */
+export const defaultSections: Section[] = [
+  { key: "slides", on: true }, { key: "bestsellers", on: true }, { key: "categories", on: true },
+  { key: "story", on: true }, { key: "more", on: true }, { key: "customers", on: true }, { key: "process", on: true },
+];
+export const sectionNames: Record<Section["key"], string> = {
+  slides: "Slides at the top", bestsellers: "Bestsellers row", categories: "Shop by category",
+  story: "Our story (dark section with photos)", more: "Second product row", customers: "Happy customers",
+  process: "Our process (photo and About text)",
+};
+export const defaultSlides: Slide[] = [];
+export const defaultCustomers: Customer[] = [];
+export const defaultCategories: CategoryItem[] = [
+  { slug: "rings", name: "Rings", image: "", inMenu: true },
+  { slug: "earrings", name: "Earrings", image: "", inMenu: true },
+  { slug: "bracelets", name: "Bracelets", image: "", inMenu: true },
+  { slug: "necklaces", name: "Necklaces", image: "", inMenu: false },
+];
+export const defaultPages = (aboutBody: string): PageItem[] => [
+  { slug: "about", title: "About us", body: aboutBody, inMenu: true },
+  { slug: "contact", title: "Contact", body: "Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.", inMenu: true },
+  {
+    slug: "faq", title: "FAQ", inMenu: false,
+    body: "## Is your jewellery real silver?\nYes. Every piece is certified 925 sterling silver.\n\n## How do I care for my silver?\nStore it dry, away from perfume, and polish it with a soft cloth.\n\n## How long does delivery take?\nMost orders arrive in 3 to 7 working days.",
+  },
+];
+export const defaultContent = (site: SiteSettings = defaultSettings): Content => ({
+  site, sections: defaultSections, slides: defaultSlides, customers: defaultCustomers,
+  categories: defaultCategories, pages: defaultPages(site.aboutBody),
+});

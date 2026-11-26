@@ -1,11 +1,13 @@
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
-import { getProducts, getSettings } from "@/lib/store";
-import { cats } from "@/lib/format";
+import { getProducts } from "@/lib/store";
+import { siteContent } from "@/lib/site";
 
 export default async function Shop({ searchParams }: { searchParams: Promise<{ cat?: string; metal?: string; sort?: string }> }) {
   const { cat, metal, sort } = await searchParams;
-  const [s, all] = await Promise.all([getSettings(), getProducts()]);
+  const [c, all] = await Promise.all([siteContent(), getProducts()]);
+  const s = c.site;
+  const current = c.categories.find((x) => x.slug === cat);
   let list = all.filter((p) => (!cat || p.category === cat) && (!metal || p.metal === metal));
   if (sort === "low") list = [...list].sort((a, b) => a.price - b.price);
   if (sort === "high") list = [...list].sort((a, b) => b.price - a.price);
@@ -17,10 +19,10 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ c
   const pill = (on: boolean) => `eyebrow rounded-full border px-4 py-2 ${on ? "border-ink bg-ink text-ivory" : "border-ink/20 hover:border-ink"}`;
   return (
     <div className="mx-auto max-w-7xl px-5 py-14">
-      <h1 className="serif text-5xl italic md:text-6xl capitalize">{cat ?? "All jewellery"}</h1>
+      <h1 className="serif text-5xl italic md:text-6xl">{current?.name ?? (cat ? cat : "All jewellery")}</h1>
       <div className="mt-8 flex flex-wrap items-center gap-2">
         <Link href={q({ cat: undefined })} className={pill(!cat)}>All</Link>
-        {cats.map((c) => <Link key={c} href={q({ cat: c })} className={pill(cat === c)}>{c}</Link>)}
+        {c.categories.map((x) => <Link key={x.slug} href={q({ cat: x.slug })} className={pill(cat === x.slug)}>{x.name}</Link>)}
         <span className="mx-2 hidden h-5 w-px bg-ink/20 sm:block" />
         {["gold", "silver", "rose"].map((m) => <Link key={m} href={q({ metal: metal === m ? undefined : m })} className={pill(metal === m)}>{m}</Link>)}
         <span className="ml-auto flex gap-2">
