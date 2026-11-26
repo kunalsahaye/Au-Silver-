@@ -33,7 +33,7 @@ Open http://localhost:3000/admin and sign in with `admin@demo.com` / `admin123`.
 ## Go live on Vercel
 
 1. Push this repository to GitHub and import it in Vercel (Add New > Project). The defaults for Next.js are correct.
-2. In the Vercel project, **Storage > Create Database > Supabase**, connect it to the project. Then open the Supabase dashboard, SQL Editor, paste `supabase/schema.sql` and run it.
+2. In the Vercel project, **Storage > Create Database > Supabase**, connect it to the project. The site creates its tables automatically on first use (it uses `POSTGRES_URL_NON_POOLING`, which the integration adds). Without that variable, paste `supabase/schema.sql` into Supabase's SQL Editor and run it.
 3. **Storage > Create > Blob**, connect it to the project (public access).
 4. **Settings > Environment Variables**: add `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CLIENT_EMAIL`, `CLIENT_PASSWORD`, `SESSION_SECRET` (see `.env.example`).
 5. Redeploy. Sign in at `https://<your-site>/admin`, add products and photos, and edit the site content.

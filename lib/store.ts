@@ -4,12 +4,15 @@ import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { defaultSettings, seedProducts } from "./seed";
+import { ensureSchema } from "./migrate";
 import type { Enquiry, Order, PageView, Product, SiteSettings } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 export const usingSupabase = Boolean(url && key);
 const sb = usingSupabase ? createClient(url!, key!, { auth: { persistSession: false } }) : null;
+/** Make sure the Supabase tables exist before the first query. */
+const ready = () => (sb ? ensureSchema() : Promise.resolve());
 
 /* ---------- demo mode: JSON file so the template works with zero setup ---------- */
 interface Demo {
@@ -28,6 +31,7 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").repla
 
 /* ---------- products ---------- */
 export async function getProducts(): Promise<Product[]> {
+  await ready();
   if (sb) {
     const { data } = await sb.from("products").select("*").order("created_at", { ascending: false });
     return (data as Product[]) ?? [];
@@ -35,9 +39,11 @@ export async function getProducts(): Promise<Product[]> {
   return load().products;
 }
 export async function getProduct(slug: string) {
+  await ready();
   return (await getProducts()).find((x) => x.slug === slug) ?? null;
 }
 export async function saveProduct(input: Partial<Product> & { name: string }) {
+  await ready();
   const row = {
     slug: input.slug || slugify(input.name),
     name: input.name,
@@ -70,12 +76,14 @@ export async function saveProduct(input: Partial<Product> & { name: string }) {
   save(d);
 }
 export async function deleteProduct(id: string) {
+  await ready();
   if (sb) { await sb.from("products").delete().eq("id", id); return; }
   const d = load(); d.products = d.products.filter((x) => x.id !== id); save(d);
 }
 
 /* ---------- settings ---------- */
 export async function getSettings(): Promise<SiteSettings> {
+  await ready();
   if (sb) {
     const { data } = await sb.from("settings").select("value").eq("key", "site").maybeSingle();
     return { ...defaultSettings, ...(data?.value ?? {}) };
@@ -83,6 +91,7 @@ export async function getSettings(): Promise<SiteSettings> {
   return { ...defaultSettings, ...load().settings };
 }
 export async function saveSettings(s: SiteSettings) {
+  await ready();
   if (sb) {
     const { error } = await sb.from("settings").upsert({ key: "site", value: s });
     if (error) throw new Error(`Could not save site content: ${error.message}`);
@@ -93,12 +102,14 @@ export async function saveSettings(s: SiteSettings) {
 
 /* ---------- enquiries ---------- */
 export async function createEnquiry(e: Pick<Enquiry, "name" | "email" | "phone" | "message" | "product_name">) {
+  await ready();
   if (sb) { await sb.from("enquiries").insert({ ...e, status: "new" }); return; }
   const d = load();
   d.enquiries.unshift({ ...e, id: uid(), status: "new", created_at: new Date().toISOString() });
   save(d);
 }
 export async function getEnquiries(): Promise<Enquiry[]> {
+  await ready();
   if (sb) {
     const { data } = await sb.from("enquiries").select("*").order("created_at", { ascending: false });
     return (data as Enquiry[]) ?? [];
@@ -106,6 +117,7 @@ export async function getEnquiries(): Promise<Enquiry[]> {
   return load().enquiries;
 }
 export async function setEnquiryStatus(id: string, status: Enquiry["status"]) {
+  await ready();
   if (sb) { await sb.from("enquiries").update({ status }).eq("id", id); return; }
   const d = load(); d.enquiries = d.enquiries.map((x) => (x.id === id ? { ...x, status } : x)); save(d);
 }
@@ -119,6 +131,7 @@ type NewOrder = Omit<Order, "id" | "status" | "created_at">;
  * Returns the name of the first item that ran out, if any; nothing is saved in that case.
  */
 export async function createOrder(o: NewOrder): Promise<{ ok: true } | { ok: false; soldOut: string }> {
+  await ready();
   if (sb) {
     const { error } = await sb.rpc("place_order", { p_order: o });
     if (error) {
@@ -139,6 +152,7 @@ export async function createOrder(o: NewOrder): Promise<{ ok: true } | { ok: fal
   return { ok: true };
 }
 export async function getOrders(): Promise<Order[]> {
+  await ready();
   if (sb) {
     const { data } = await sb.from("orders").select("*").order("created_at", { ascending: false });
     return (data as Order[]) ?? [];
@@ -163,6 +177,7 @@ async function adjustStock(slug: string, delta: number): Promise<boolean> {
 
 /** Changes an order's status. Cancelling puts its items back in stock; un-cancelling takes them out again. */
 export async function setOrderStatus(id: string, status: Order["status"]): Promise<{ ok: true } | { ok: false; soldOut: string }> {
+  await ready();
   const order = (await getOrders()).find((x) => x.id === id);
   if (!order) return { ok: true };
   const was = order.status === "cancelled", now = status === "cancelled";
@@ -185,11 +200,13 @@ export async function setOrderStatus(id: string, status: Order["status"]): Promi
 
 /* ---------- analytics ---------- */
 export async function trackView(p: string) {
+  await ready();
   if (sb) { await sb.from("page_views").insert({ path: p }); return; }
   const d = load(); d.views.push({ path: p, created_at: new Date().toISOString() });
   d.views = d.views.slice(-5000); save(d);
 }
 export async function getViews(): Promise<PageView[]> {
+  await ready();
   if (sb) {
     const since = new Date(Date.now() - 30 * 864e5).toISOString();
     const { data } = await sb.from("page_views").select("path,created_at").gte("created_at", since).limit(20000);

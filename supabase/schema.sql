@@ -1,4 +1,6 @@
--- Run this once in Supabase: SQL Editor > New query > paste > Run
+-- The site runs this automatically on start-up when POSTGRES_URL_NON_POOLING is set (Vercel's Supabase
+-- integration adds it). You can also paste it into Supabase > SQL Editor and run it. Safe to run again.
+-- Keep in sync with lib/schema.ts.
 create table if not exists products (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
@@ -71,3 +73,15 @@ revoke execute on function place_order(jsonb) from public, anon, authenticated;
 revoke execute on function adjust_stock(text, int) from public, anon, authenticated;
 grant execute on function place_order(jsonb) to service_role;
 grant execute on function adjust_stock(text, int) to service_role;
+
+-- Let the server's service role use the tables (newer Supabase projects no longer grant this automatically).
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant usage on schema public to service_role;
+    grant all on all tables in schema public to service_role;
+    grant all on all sequences in schema public to service_role;
+  end if;
+end $$;
+
+-- Tell Supabase's API to pick up the new tables right away.
+notify pgrst, 'reload schema';
