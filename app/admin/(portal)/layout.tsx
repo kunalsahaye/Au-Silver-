@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { logout } from "../actions";
+import { requireRole } from "@/lib/auth";
+import { getSettings, usingSupabase } from "@/lib/store";
+
+export const dynamic = "force-dynamic";
+
+export default async function Portal({ children }: { children: React.ReactNode }) {
+  const role = await requireRole();
+  const s = await getSettings();
+  const links = [["Dashboard", "/admin"], ["Products", "/admin/products"], ["Orders", "/admin/orders"], ["Enquiries", "/admin/enquiries"], ["Site content", "/admin/content"]];
+  return (
+    <div className="min-h-screen bg-[#f2ece6] md:grid md:grid-cols-[230px_1fr]">
+      <aside className="bg-[#24160f] p-6 text-ivory md:min-h-screen">
+        <p className="serif text-2xl italic">{s.brand}</p>
+        <p className="eyebrow mt-1 text-gold">{role === "admin" ? "Admin" : "Client"} portal</p>
+        <nav className="mt-8 flex gap-2 overflow-x-auto md:block md:space-y-1">
+          {links.map(([l, h]) => <Link key={h} href={h} className="block whitespace-nowrap rounded-xl px-3 py-2 text-sm hover:bg-ivory/10">{l}</Link>)}
+          <Link href="/" target="_blank" className="block whitespace-nowrap rounded-xl px-3 py-2 text-sm opacity-60 hover:bg-ivory/10">View site ↗</Link>
+        </nav>
+        <form action={logout} className="mt-6"><button className="text-xs opacity-60 hover:opacity-100">Sign out</button></form>
+      </aside>
+      <div className="p-5 md:p-10">
+        {!usingSupabase && role === "admin" && (
+          <div className="mb-6 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
+            <b>Demo mode.</b> Supabase keys are not set, so data is stored temporarily. Add the env vars from the README to make it permanent.
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
