@@ -1,0 +1,6 @@
+/** Structured data for search engines (schema.org JSON-LD). */
+export default function JsonLd({ data }: { data: unknown }) {
+  if (!data) return null;
+  const json = JSON.stringify(data, (_, v) => (v === undefined || v === "" ? undefined : v)).replace(/</g, "\\u003c");
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
+}

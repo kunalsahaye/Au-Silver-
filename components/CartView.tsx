@@ -9,7 +9,8 @@ import { money, shippingFor } from "@/lib/format";
 export interface Live { name: string; price: number; stock: number }
 
 type Ship = { shippingFee: string; freeShippingOver: string };
-function Inner({ currency, live, shipping }: { currency: string; live: Record<string, Live>; shipping: Ship }) {
+type W = { bagTitle: string; bagEmpty: string; placeOrder: string; orderNote: string; orderPlacedTitle: string; orderPlaced: string; shopAllTitle: string; keepShopping: string };
+function Inner({ currency, live, shipping, w }: { currency: string; live: Record<string, Live>; shipping: Ship; w: W }) {
   const { lines: saved, setQty, clear } = useCart();
   // Show today's names, prices and stock from the shop, not what was saved in the browser.
   const lines = saved.filter((l) => live[l.slug]).map((l) => ({ ...l, ...live[l.slug], qty: Math.min(l.qty, live[l.slug].stock) })).filter((l) => l.qty > 0);
@@ -24,16 +25,16 @@ function Inner({ currency, live, shipping }: { currency: string; live: Record<st
   useEffect(() => { if (placed) clear(); }, [placed, clear]);
   if (placed) return (
     <div className="mx-auto max-w-xl px-5 py-28 text-center">
-      <h1 className="serif text-5xl italic">Order received</h1>
-      <p className="mt-4 opacity-70">Thank you. We will confirm your order and payment details shortly.</p>
-      <Link href="/shop" className="btn btn-dark mt-8">Keep shopping</Link>
+      <h1 className="serif text-5xl italic">{w.orderPlacedTitle}</h1>
+      <p className="mt-4 opacity-70">{w.orderPlaced}</p>
+      <Link href="/shop" className="btn btn-dark mt-8">{w.keepShopping}</Link>
     </div>
   );
   return (
     <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 md:grid-cols-[1.3fr_1fr]">
       <div>
-        <h1 className="serif text-5xl italic">Your bag</h1>
-        {!lines.length && <p className="mt-8 opacity-60">Your bag is empty. <Link href="/shop" className="underline">Browse the collection</Link></p>}
+        <h1 className="serif text-5xl italic">{w.bagTitle}</h1>
+        {!lines.length && <p className="mt-8 opacity-60">{w.bagEmpty} <Link href="/shop" className="underline">{w.shopAllTitle} →</Link></p>}
         <ul className="mt-8 divide-y divide-ink/10">
           {lines.map((l) => (
             <li key={l.slug} className="flex items-center justify-between gap-4 py-5">
@@ -62,11 +63,11 @@ function Inner({ currency, live, shipping }: { currency: string; live: Record<st
             {ship > 0 && freeOver !== null && <p className="text-xs opacity-60">Add {fmt(freeOver - subtotal)} more for free shipping.</p>}
           </div>
           <div className="flex justify-between text-lg"><span>Total</span><span>{fmt(total)}</span></div>
-          <button className="btn btn-dark w-full">Place order</button>
-          <p className="text-xs opacity-50">We will contact you to confirm and arrange payment.</p>
+          <button className="btn btn-dark w-full">{w.placeOrder}</button>
+          <p className="text-xs opacity-50">{w.orderNote}</p>
         </form>
       )}
     </div>
   );
 }
-export default function CartView(props: { currency: string; live: Record<string, Live>; shipping: Ship }) { return <Suspense><Inner {...props} /></Suspense>; }
+export default function CartView(props: { currency: string; live: Record<string, Live>; shipping: Ship; w: W }) { return <Suspense><Inner {...props} /></Suspense>; }

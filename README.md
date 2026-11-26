@@ -8,12 +8,18 @@ A jewellery storefront with a built-in admin dashboard that works as the site's 
 - **Homepage**: turn sections on or off and reorder them; edit headlines and photos.
 - **Slides**: photos or videos at the top of the homepage, each with a headline and button.
 - **Happy customers**: customer photo or video, name, note and stars.
-- **Categories**: add, rename, reorder, set a photo, choose which appear in the menu.
+- **Categories**: add, rename, reorder, set a photo and description, make sub-categories (e.g. Rings › Stacking rings), choose which appear in the menu. Each has its own page at `/shop/<name>` with search, metal and price filters, sorting and pages.
+- **Words on the site**: change every button, heading and message the shop shows.
+- **Google and SEO**: web address, Google title and description, share picture, shop address and map position, Search Console and Bing codes, and a checklist of what is missing. Each product, category and page also has its own Google title, description and picture.
 - **Pages**: About, Contact, FAQ and your own pages.
 - **Shop settings**: name, offer banner, shipping charge and free-shipping amount, currency, contact details, Instagram.
 - **Draft and Publish**: homepage, slides, customers, categories, pages and settings save as a draft. Press **Preview** to see the shop with your changes, then **Publish**.
 - **Orders** and **Enquiries** with status. Stock is taken out when an order is placed and put back if it is cancelled.
 - Two logins: **admin** (can delete products, move photos) and **client** (the shop owner).
+
+## Search engines
+
+Made automatically: `/sitemap.xml`, `/robots.txt`, `/feed.xml` (Google Merchant Center product feed), canonical addresses, Open Graph and X cards, and structured data (store with address and map position, products with price, stock, delivery and returns, breadcrumbs, FAQ). After going live: set the web address in **Google and SEO**, verify the site in Google Search Console with the HTML tag, submit the sitemap there, and add the feed in Merchant Center.
 
 ## Services used
 

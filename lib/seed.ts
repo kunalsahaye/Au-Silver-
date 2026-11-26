@@ -19,7 +19,29 @@ export const defaultSettings: SiteSettings = {
   currency: "₹",
   shippingFee: "0",
   freeShippingOver: "",
-  img1: "", img2: "", img3: "", img4: "", img5: "", img6: "", img7: "", img8: "",
+  img1: "", img2: "", img3: "", img4: "", img5: "", img6: "", img7: "", img8: "", img9: "",
+  productPlaceholder: "",
+  logo: "",
+  siteUrl: "",
+  seoTitle: "",
+  seoDescription: "",
+  shareImage: "",
+  googleVerification: "",
+  bingVerification: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "IN",
+  latitude: "",
+  longitude: "",
+  openingHours: "",
+  priceRange: "₹₹",
+  whatsapp: "",
+  facebook: "",
+  youtube: "",
+  pinterest: "",
+  returnDays: "7",
+  deliveryDays: "3-7",
 };
 
 const d = "2026-01-01T00:00:00.000Z";
@@ -30,7 +52,7 @@ const p = (
 ): Product => ({
   id: slug, slug, name, category, metal: "silver", price, description,
   material: "925 Sterling Silver", finish,
-  image_url: null, images: [], featured, bestseller, stock: 25, created_at: d,
+  image_url: null, images: [], seo: {}, featured, bestseller, stock: 25, created_at: d,
 });
 
 export const seedProducts: Product[] = [
@@ -61,20 +83,23 @@ export const sectionNames: Record<Section["key"], string> = {
 export const defaultSlides: Slide[] = [];
 export const defaultCustomers: Customer[] = [];
 export const defaultCategories: CategoryItem[] = [
-  { slug: "rings", name: "Rings", image: "", inMenu: true },
-  { slug: "earrings", name: "Earrings", image: "", inMenu: true },
-  { slug: "bracelets", name: "Bracelets", image: "", inMenu: true },
-  { slug: "necklaces", name: "Necklaces", image: "", inMenu: false },
+  cat("rings", "Rings", true, "Sterling silver rings: bands, solitaires and stackables in certified 925 silver."),
+  cat("earrings", "Earrings", true, "Silver hoops, studs and drops, light enough to wear every day."),
+  cat("bracelets", "Bracelets", true, "Chains, cuffs and bar bracelets in 925 sterling silver."),
+  cat("necklaces", "Necklaces", false, "Pendants and chains in certified 925 sterling silver."),
 ];
+function cat(slug: string, name: string, inMenu: boolean, description: string): CategoryItem {
+  return { slug, name, image: "", inMenu, parent: "", description, seoTitle: "", seoDescription: "" };
+}
 export const defaultPages = (aboutBody: string): PageItem[] => [
-  { slug: "about", title: "About us", body: aboutBody, inMenu: true },
-  { slug: "contact", title: "Contact", body: "Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.", inMenu: true },
+  { slug: "about", title: "About us", body: aboutBody, inMenu: true, seoTitle: "", seoDescription: "", image: "" },
+  { slug: "contact", title: "Contact", body: "Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.", inMenu: true, seoTitle: "", seoDescription: "", image: "" },
   {
-    slug: "faq", title: "FAQ", inMenu: false,
+    slug: "faq", title: "FAQ", inMenu: false, seoTitle: "", seoDescription: "", image: "",
     body: "## Is your jewellery real silver?\nYes. Every piece is certified 925 sterling silver.\n\n## How do I care for my silver?\nStore it dry, away from perfume, and polish it with a soft cloth.\n\n## How long does delivery take?\nMost orders arrive in 3 to 7 working days.",
   },
 ];
 export const defaultContent = (site: SiteSettings = defaultSettings): Content => ({
   site, sections: defaultSections, slides: defaultSlides, customers: defaultCustomers,
-  categories: defaultCategories, pages: defaultPages(site.aboutBody),
+  categories: defaultCategories, pages: defaultPages(site.aboutBody), words: {},
 });

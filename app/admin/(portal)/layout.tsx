@@ -14,7 +14,7 @@ export default async function Portal({ children }: { children: React.ReactNode }
   const links = [
     ["Home", "/admin"], ["Products", "/admin/products"], ["Orders", "/admin/orders"], ["Enquiries", "/admin/enquiries"],
     ["Homepage", "/admin/homepage"], ["Slides", "/admin/homepage/slides"], ["Happy customers", "/admin/homepage/customers"],
-    ["Categories", "/admin/categories"], ["Pages", "/admin/pages"], ["Shop settings", "/admin/settings"],
+    ["Categories", "/admin/categories"], ["Pages", "/admin/pages"], ["Words on the site", "/admin/words"], ["Shop settings", "/admin/settings"], ["Google and SEO", "/admin/seo"],
   ];
   return (
     <div className="min-h-screen bg-[#f2ece6] md:grid md:grid-cols-[230px_1fr]">

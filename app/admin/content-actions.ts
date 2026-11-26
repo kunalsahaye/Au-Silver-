@@ -6,6 +6,7 @@ import { getRole } from "@/lib/auth";
 import { discardDraft, getDraft, publishDraft, saveDraft } from "@/lib/store";
 import type { CategoryItem, Content, Customer, PageItem, Section, SiteSettings, Slide } from "@/lib/types";
 import { defaultSections } from "@/lib/seed";
+import { WORDS } from "@/lib/words";
 
 /* All edits here go into the draft. Nothing changes on the shop until Publish. */
 
@@ -41,7 +42,7 @@ export async function saveHomepage(fd: FormData) {
     const known = new Set(defaultSections.map((s) => s.key));
     const got = list(fd).filter((x) => known.has(x.key as Section["key"])).map((x) => ({ key: x.key as Section["key"], on: !!x.on }));
     c.sections = [...got, ...defaultSections.filter((d) => !got.some((g) => g.key === d.key))];
-    pick(fd, c.site, ["heroTitle", "heroSub", "storyTitle", "storyBody", "processTitle", "img1", "img2", "img3", "img4", "img5", "img6", "img7"]);
+    pick(fd, c.site, ["heroTitle", "heroSub", "storyTitle", "storyBody", "processTitle", "img1", "img2", "img3", "img4", "img5", "img6", "img7", "img9"]);
   });
 }
 
@@ -66,9 +67,15 @@ export async function saveCustomers(fd: FormData) {
 export async function saveCategories(fd: FormData) {
   await update("/admin/categories", (c) => {
     const taken = new Set<string>();
-    c.categories = list(fd).filter((x) => str(x.name)).map((x): CategoryItem => ({
+    const cats = list(fd).filter((x) => str(x.name)).map((x): CategoryItem => ({
       slug: unique(slugify(str(x.slug) || str(x.name)), taken), name: str(x.name, 60), image: str(x.image, 1000), inMenu: !!x.inMenu,
+      parent: str(x.parent, 60), description: str(x.description, 2000),
+      seoTitle: str(x.seoTitle, 70), seoDescription: str(x.seoDescription, 170),
     }));
+    // One level of sub-categories: a parent must exist, be a top-level category and not be itself.
+    const top = new Set(cats.filter((x) => !x.parent).map((x) => x.slug));
+    for (const x of cats) if (x.parent && (x.parent === x.slug || !top.has(x.parent))) x.parent = "";
+    c.categories = cats;
   });
 }
 
@@ -79,7 +86,10 @@ export async function savePages(fd: FormData) {
       let base = slugify(str(x.slug) || str(x.title));
       const fixed = base === "about" || base === "contact"; // these two keep their own page designs
       if (!fixed && RESERVED.includes(base)) base = `${base}-page`;
-      return { slug: unique(base, taken), title: str(x.title, 80), body: str(x.body, 20000), inMenu: !!x.inMenu };
+      return {
+        slug: unique(base, taken), title: str(x.title, 80), body: str(x.body, 20000), inMenu: !!x.inMenu,
+        seoTitle: str(x.seoTitle, 70), seoDescription: str(x.seoDescription, 170), image: str(x.image, 1000),
+      };
     });
     const about = c.pages.find((p) => p.slug === "about");
     if (about) c.site.aboutBody = about.body; // the homepage "process" section quotes its first paragraph
@@ -88,9 +98,29 @@ export async function savePages(fd: FormData) {
 
 export async function saveShopSettings(fd: FormData) {
   await update("/admin/settings", (c) => {
-    pick(fd, c.site, ["brand", "tagline", "announcement", "email", "phone", "address", "instagram", "currency", "img8"]);
+    pick(fd, c.site, ["brand", "tagline", "announcement", "email", "phone", "address", "instagram", "currency", "img8", "logo", "productPlaceholder", "whatsapp", "facebook", "youtube", "pinterest", "returnDays", "deliveryDays"]);
     const num = (k: "shippingFee" | "freeShippingOver") => { const v = str(fd.get(k), 12); c.site[k] = v === "" ? "" : String(Math.max(0, Number(v) || 0)); };
     num("shippingFee"); num("freeShippingOver");
+  });
+}
+
+export async function saveWords(fd: FormData) {
+  await update("/admin/words", (c) => {
+    const w: Record<string, string> = {};
+    for (const k of Object.keys(WORDS)) { const v = str(fd.get(k), 300); if (v && v !== WORDS[k as keyof typeof WORDS][0]) w[k] = v; }
+    c.words = w;
+  });
+}
+
+export async function saveSeo(fd: FormData) {
+  await update("/admin/seo", (c) => {
+    pick(fd, c.site, ["seoTitle", "seoDescription", "shareImage", "googleVerification", "bingVerification", "address", "city", "region", "postalCode", "country", "latitude", "longitude", "openingHours", "priceRange"], 300);
+    const url = str(fd.get("siteUrl"), 200).replace(/\/+$/, "");
+    c.site.siteUrl = /^https?:\/\/[^\s/]+$/.test(url) ? url : "";
+    // Verification fields: accept the whole <meta> tag and keep only its content value.
+    for (const k of ["googleVerification", "bingVerification"] as const) {
+      const m = /content=["']([^"']+)["']/.exec(c.site[k]); if (m) c.site[k] = m[1];
+    }
   });
 }
 
