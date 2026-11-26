@@ -1,44 +1,41 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getRole } from "@/lib/auth";
-import { blobEnabled, IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/uploads";
+import { checkFile, signUpload, storageEnabled } from "@/lib/uploads";
 
 /**
- * Image uploads for the admin portal.
- * - With Vercel Blob connected: the browser uploads straight to Blob; this route only hands out
- *   short-lived upload tokens to signed-in portal users (and receives Blob's completion callback).
- * - Without Blob, in local development only: accepts a multipart upload and saves it to public/uploads.
+ * Photo and video uploads for the admin.
+ * - With Supabase: the browser sends {type, size}; we check it and hand back a one-time upload address
+ *   in Supabase Storage, so large videos never pass through this server.
+ * - Without Supabase, in local development only: the browser posts the file here and it goes to public/uploads.
  */
 export async function POST(request: Request) {
-  if (blobEnabled) {
-    const body = (await request.json()) as HandleUploadBody;
+  if (!(await getRole())) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+
+  if ((request.headers.get("content-type") || "").includes("application/json")) {
+    const { type, size } = (await request.json().catch(() => ({}))) as { type?: string; size?: number };
+    const bad = checkFile(String(type ?? ""), Number(size) || 0);
+    if (bad) return NextResponse.json({ error: bad }, { status: 400 });
+    if (!storageEnabled) {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Uploads need Supabase. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." }, { status: 503 });
+      }
+      return NextResponse.json({ local: true });
+    }
     try {
-      const result = await handleUpload({
-        body,
-        request,
-        onBeforeGenerateToken: async () => {
-          if (!(await getRole())) throw new Error("Not signed in");
-          return { allowedContentTypes: IMAGE_TYPES, maximumSizeInBytes: MAX_IMAGE_BYTES, addRandomSuffix: true };
-        },
-        onUploadCompleted: async () => {},
-      });
-      return NextResponse.json(result);
+      return NextResponse.json(await signUpload(String(type)));
     } catch (e) {
-      return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+      return NextResponse.json({ error: (e as Error).message }, { status: 500 });
     }
   }
 
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Image uploads need a Vercel Blob store. Connect one in Vercel > Storage." }, { status: 503 });
-  }
-  if (!(await getRole())) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (storageEnabled || process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not available" }, { status: 400 });
   const file = (await request.formData()).get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "No file" }, { status: 400 });
-  if (!IMAGE_TYPES.includes(file.type)) return NextResponse.json({ error: "Please upload a JPG, PNG, WebP, AVIF or GIF image." }, { status: 400 });
-  if (file.size > MAX_IMAGE_BYTES) return NextResponse.json({ error: "Image is larger than 10 MB." }, { status: 400 });
-  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
+  const bad = checkFile(file.type, file.size);
+  if (bad) return NextResponse.json({ error: bad }, { status: 400 });
+  const ext = file.type === "image/jpeg" ? "jpg" : file.type === "video/quicktime" ? "mov" : file.type.split("/")[1];
   const name = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const dir = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(dir, { recursive: true });

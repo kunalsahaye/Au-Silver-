@@ -12,11 +12,14 @@ create table if not exists products (
   material text default '',
   finish text default '',
   image_url text,
+  images jsonb not null default '[]'::jsonb,
   featured boolean default false,
   bestseller boolean default false,
   stock int default 0,
   created_at timestamptz default now()
 );
+-- Added later: extra product photos (safe to run on an existing table).
+alter table products add column if not exists images jsonb not null default '[]'::jsonb;
 create table if not exists settings (key text primary key, value jsonb not null);
 create table if not exists enquiries (
   id uuid primary key default gen_random_uuid(),

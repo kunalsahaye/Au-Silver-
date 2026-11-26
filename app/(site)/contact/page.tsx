@@ -1,14 +1,17 @@
 import { submitEnquiry } from "@/app/actions";
-import { getSettings } from "@/lib/store";
+import RichText from "@/components/RichText";
+import { siteContent } from "@/lib/site";
 
 export default async function Contact({ searchParams }: { searchParams: Promise<{ sent?: string; error?: string; product?: string }> }) {
   const { sent, error, product } = await searchParams;
-  const s = await getSettings();
+  const c = await siteContent();
+  const s = c.site;
+  const page = c.pages.find((p) => p.slug === "contact");
   return (
     <div className="mx-auto grid max-w-6xl gap-14 px-5 py-20 md:grid-cols-2">
       <div>
-        <h1 className="serif text-6xl italic">Get in touch</h1>
-        <p className="mt-6 max-w-sm leading-relaxed opacity-75">Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.</p>
+        <h1 className="serif text-6xl italic">{page?.title && page.title !== "Contact" ? page.title : "Get in touch"}</h1>
+        <div className="mt-6 max-w-sm opacity-75"><RichText text={page?.body ?? ""} /></div>
         <div className="mt-10 space-y-2 text-sm opacity-80"><p>{s.email}</p><p>{s.phone}</p><p>{s.address}</p><p>{s.instagram}</p></div>
       </div>
       {sent ? (

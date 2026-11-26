@@ -1,11 +1,13 @@
 import Link from "next/link";
 import ProductArt from "@/components/ProductArt";
-import { getProducts, getSettings } from "@/lib/store";
-import { cats, money } from "@/lib/format";
+import { getDraft, getProducts } from "@/lib/store";
+import { money } from "@/lib/format";
 
 export default async function Products({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; stock?: string }> }) {
   const { q = "", cat = "", stock = "" } = await searchParams;
-  const [all, s] = await Promise.all([getProducts(), getSettings()]);
+  const [all, { content }] = await Promise.all([getProducts(), getDraft()]);
+  const s = content.site, cats = content.categories;
+  const catName = (slug: string) => cats.find((c) => c.slug === slug)?.name ?? slug;
   const term = q.trim().toLowerCase();
   const list = all.filter((p) =>
     (!term || p.name.toLowerCase().includes(term) || p.slug.includes(term)) &&
@@ -19,7 +21,7 @@ export default async function Products({ searchParams }: { searchParams: Promise
       </div>
       <form className="mb-4 flex flex-wrap gap-2">
         <input name="q" defaultValue={q} placeholder="Search by name" className="field !w-56 !py-2" />
-        <select name="cat" defaultValue={cat} className="field !w-auto !py-2 capitalize"><option value="">All categories</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+        <select name="cat" defaultValue={cat} className="field !w-auto !py-2"><option value="">All categories</option>{cats.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}</select>
         <select name="stock" defaultValue={stock} className="field !w-auto !py-2"><option value="">Any stock</option><option value="low">Low or sold out (3 or fewer)</option></select>
         <button className="btn btn-line !px-4 !py-2">Filter</button>
         {(q || cat || stock) && <Link href="/admin/products" className="self-center text-sm underline opacity-60">Clear</Link>}
@@ -34,7 +36,7 @@ export default async function Products({ searchParams }: { searchParams: Promise
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full rounded-lg object-cover" /> : <ProductArt category={p.category} metal={p.metal} id={`a-${p.id}`} />}
                 </div>{p.name}</Link></td>
-                <td className="capitalize">{p.category}</td><td>{money(s.currency, p.price)}</td>
+                <td>{catName(p.category)}</td><td>{money(s.currency, p.price)}</td>
                 <td>{p.stock <= 0 ? <span className="rounded-full bg-burgundy/10 px-2 py-0.5 text-xs text-burgundy">Sold out</span> : p.stock <= 3 ? <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs">{p.stock} left</span> : p.stock}</td>
                 <td className="text-xs opacity-60">{p.featured && "Featured "}{p.bestseller && "Bestseller"}</td>
                 <td className="whitespace-nowrap pr-4 text-right"><Link href={`/product/${p.slug}`} target="_blank" className="mr-4 opacity-60 hover:underline">View ↗</Link><Link href={`/admin/products/${p.id}`} className="underline">Edit</Link></td>

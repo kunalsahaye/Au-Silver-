@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProducts, usingSupabase } from "@/lib/store";
 import { schemaStatus } from "@/lib/migrate";
-import { blobEnabled } from "@/lib/uploads";
+import { storageEnabled, uploadsEnabled } from "@/lib/uploads";
 import { authProblems } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,8 @@ export async function GET() {
     database: usingSupabase ? "supabase" : "demo (temporary)",
     databaseAutoSetup: autoSetup,
     products,
-    photoUploads: blobEnabled,
+    photoUploads: uploadsEnabled,
+    photoStorage: storageEnabled ? "supabase" : "local (development only)",
     loginReady: authProblems().length === 0,
   });
 }

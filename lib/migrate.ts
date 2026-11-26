@@ -35,7 +35,7 @@ async function run() {
   try {
     await client.query("select pg_advisory_lock(727001)");
     const { rows } = await client.query(
-      "select to_regclass('public.products') is not null and to_regclass('public.page_views') is not null and exists (select 1 from pg_proc where proname = 'adjust_stock') as ok",
+      "select to_regclass('public.products') is not null and to_regclass('public.page_views') is not null and exists (select 1 from pg_proc where proname = 'adjust_stock') and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'products' and column_name = 'images') as ok",
     );
     if (!rows[0]?.ok) {
       await client.query(SCHEMA_SQL);

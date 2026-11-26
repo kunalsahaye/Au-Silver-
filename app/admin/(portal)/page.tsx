@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { getEnquiries, getOrders, getProducts, getSettings, getViews } from "@/lib/store";
 import { money } from "@/lib/format";
+import Welcome from "@/components/admin/Welcome";
+import Notice from "@/components/admin/Notice";
 
 function lastDays(n: number) {
   const now = Date.now();
   return Array.from({ length: n }, (_, i) => new Date(now - (n - 1 - i) * 864e5).toISOString().slice(0, 10));
 }
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const q = await searchParams;
   const [views, enquiries, orders, products, s] = await Promise.all([getViews(), getEnquiries(), getOrders(), getProducts(), getSettings()]);
   const low = products.filter((p) => p.stock <= 3).sort((a, b) => a.stock - b.stock);
   const days = lastDays(14);
@@ -23,7 +26,9 @@ export default async function Dashboard() {
   ];
   return (
     <div className="space-y-8">
-      <h1 className="serif text-4xl italic">Dashboard</h1>
+      <Notice q={q} />
+      <Welcome newOrders={orders.filter((o) => o.status === "new").length} />
+      <h2 className="serif text-3xl italic">How the shop is doing</h2>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {stats.map(([k, v]) => <div key={k} className="rounded-2xl bg-white p-5"><p className="eyebrow opacity-50">{k}</p><p className="serif mt-2 text-3xl">{v}</p></div>)}
       </div>
@@ -44,10 +49,6 @@ export default async function Dashboard() {
           {top.length === 0 && <p className="text-sm opacity-50">No visits yet.</p>}
           <ul className="space-y-2 text-sm">{top.map(([p, n]) => <li key={p} className="flex justify-between"><span className="truncate">{p}</span><span className="opacity-60">{n}</span></li>)}</ul>
         </div>
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <Link href="/admin/products/new" className="btn btn-dark">+ Add product</Link>
-        <Link href="/admin/content" className="btn btn-line">Edit site text and photos</Link>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
       <div className="rounded-2xl bg-white p-6">

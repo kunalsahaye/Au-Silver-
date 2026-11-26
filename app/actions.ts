@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createEnquiry, createOrder, getProducts, getSettings } from "@/lib/store";
-import { money } from "@/lib/format";
+import { money, shippingFor } from "@/lib/format";
 import { notify } from "@/lib/mail";
 import type { OrderItem } from "@/lib/types";
 
@@ -37,16 +37,19 @@ export async function placeOrder(fd: FormData) {
     const p = products.find((x) => x.slug === slug);
     if (p) items.push({ slug, name: p.name, price: Number(p.price), qty: q });
   }
+  const site = await getSettings();
+  const subtotal = items.reduce((a, b) => a + b.price * b.qty, 0);
+  const shipping = shippingFor(subtotal, site);
   const o = {
     name: clean(fd.get("name"), 100), email: clean(fd.get("email"), 150),
     phone: clean(fd.get("phone"), 40), address: clean(fd.get("address"), 500), items,
-    total: items.reduce((a, b) => a + b.price * b.qty, 0),
+    total: subtotal + shipping,
   };
   if (!o.name || !o.email || !o.address || !items.length) redirect("/cart?error=1");
   const res = await createOrder(o);
   if (!res.ok) redirect(`/cart?soldout=${encodeURIComponent(res.soldOut)}`);
-  const cur = (await getSettings()).currency;
+  const cur = site.currency;
   await notify(`New order from ${o.name}`,
-    `<p><b>${esc(o.name)}</b> (${esc(o.email)}, ${esc(o.phone)})</p><p>${esc(o.address)}</p><ul>${items.map((i) => `<li>${esc(i.name)} × ${i.qty} at ${esc(money(cur, i.price))}</li>`).join("")}</ul><p>Total: ${esc(money(cur, o.total))}</p>`);
+    `<p><b>${esc(o.name)}</b> (${esc(o.email)}, ${esc(o.phone)})</p><p>${esc(o.address)}</p><ul>${items.map((i) => `<li>${esc(i.name)} × ${i.qty} at ${esc(money(cur, i.price))}</li>`).join("")}</ul><p>Shipping: ${shipping ? esc(money(cur, shipping)) : "Free"}</p><p>Total: ${esc(money(cur, o.total))}</p>`);
   redirect("/cart?placed=1");
 }

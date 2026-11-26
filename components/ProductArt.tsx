@@ -10,6 +10,8 @@ const palettes: Record<Metal, [string, string, string]> = {
 export default function ProductArt({ category, metal, id }: { category: Category; metal: Metal; id: string }) {
   const [a, b, c] = palettes[metal];
   const g = `g-${id}`;
+  // New categories added in the admin fall back to the ring drawing.
+  const shape = ["rings", "earrings", "bracelets", "necklaces"].includes(category) ? category : "rings";
   return (
     <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-label={`${metal} ${category}`}>
       <defs>
@@ -20,7 +22,7 @@ export default function ProductArt({ category, metal, id }: { category: Category
           <stop offset="0" stopColor="#fff" /><stop offset="1" stopColor="#cfe3f5" />
         </radialGradient>
       </defs>
-      {category === "rings" && (
+      {shape === "rings" && (
         <g>
           <ellipse cx="100" cy="120" rx="46" ry="52" fill="none" stroke={`url(#${g})`} strokeWidth="13" />
           <ellipse cx="100" cy="120" rx="46" ry="52" fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="2" transform="translate(-3 -3)" />
@@ -28,7 +30,7 @@ export default function ProductArt({ category, metal, id }: { category: Category
           <path d="M100 56 v-32 M85 38 h30" stroke={c} strokeOpacity=".4" strokeWidth=".8" />
         </g>
       )}
-      {category === "earrings" && (
+      {shape === "earrings" && (
         <g>
           {[62, 138].map((x) => (
             <g key={x}>
@@ -39,7 +41,7 @@ export default function ProductArt({ category, metal, id }: { category: Category
           ))}
         </g>
       )}
-      {category === "bracelets" && (
+      {shape === "bracelets" && (
         <g fill="none" stroke={`url(#${g})`} strokeWidth="9">
           {Array.from({ length: 9 }).map((_, i) => {
             const t = (i / 9) * Math.PI * 2;
@@ -47,7 +49,7 @@ export default function ProductArt({ category, metal, id }: { category: Category
           })}
         </g>
       )}
-      {category === "necklaces" && (
+      {shape === "necklaces" && (
         <g>
           <path d="M30 34 C 60 150, 140 150, 170 34" fill="none" stroke={`url(#${g})`} strokeWidth="3" strokeDasharray="1 4" strokeLinecap="round" />
           <path d="M30 34 C 60 150, 140 150, 170 34" fill="none" stroke={`url(#${g})`} strokeWidth="2" />
