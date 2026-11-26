@@ -14,6 +14,10 @@ A jewellery storefront with a built-in admin dashboard that works as the site's 
 - **Pages**: About, Contact, FAQ and your own pages.
 - **Shop settings**: name, offer banner, shipping charge and free-shipping amount, currency, contact details, Instagram.
 - **Draft and Publish**: homepage, slides, customers, categories, pages and settings save as a draft. Press **Preview** to see the shop with your changes, then **Publish**.
+- **Reels**: vertical (9:16) videos in a swipeable row on the homepage and/or product pages. Upload them, or connect Instagram once and add posts with one tap (they are copied into your own storage). Arrange the order with the arrows.
+- **Customer reviews**: written testimonials with stars, shown as cards on the homepage.
+- **Colours and fonts**: ready-made palettes or your own colours, heading and text fonts (13 to choose from), button shape. Applies to the whole shop.
+- **Plugins**: welcome popup with discount code and email capture, footer email sign-up (list downloadable as CSV), discount codes in the bag (percent, amount, free shipping, minimum order, last day), upsell on product pages and in the bag, free-shipping progress bar, WhatsApp chat button, recently viewed, sticky Add to bag on phones.
 - **Orders** and **Enquiries** with status. Stock is taken out when an order is placed and put back if it is cancelled.
 - Two logins: **admin** (can delete products, move photos) and **client** (the shop owner).
 
@@ -27,6 +31,7 @@ Made automatically: `/sitemap.xml`, `/robots.txt`, `/feed.xml` (Google Merchant 
 | --- | --- | --- |
 | Database (products, orders, content) | Supabase | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `POSTGRES_URL_NON_POOLING` so tables are created automatically |
 | Photo and video uploads | Supabase Storage (same project; a public `media` bucket is created automatically) | none extra |
+| Instagram reels (optional) | Instagram API with Instagram Login (Meta developer app) | paste the access token in Admin > Reels, or set `INSTAGRAM_ACCESS_TOKEN` |
 | Email alerts (optional) | Resend | `RESEND_API_KEY`, `ALERT_EMAIL_TO`, `ALERT_EMAIL_FROM` |
 
 Without a database the site runs in **demo mode** (data in a temporary file that can vanish). Fine for local testing, not for a live shop.

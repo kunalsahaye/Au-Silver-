@@ -5,6 +5,10 @@ import Track from "@/components/Track";
 import { siteContent } from "@/lib/site";
 import { sameAs } from "@/lib/seo";
 import { words } from "@/lib/words";
+import { fontsHref, themeVars } from "@/lib/theme";
+import Popup from "@/components/plugins/Popup";
+import SignupForm from "@/components/plugins/SignupForm";
+import WhatsApp from "@/components/plugins/WhatsApp";
 
 export const dynamic = "force-dynamic";
 
@@ -18,20 +22,23 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const menuPages = c.pages.filter((p) => p.inMenu);
   const social = sameAs(s);
   const wa = s.whatsapp.replace(/[^0-9]/g, "");
+  const pl = c.plugins;
+  const fonts = fontsHref(c.theme);
   return (
     <CartProvider>
       <Track />
-      <div className="site-theme flex min-h-screen flex-col">
+      {fonts && <><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" /><link rel="stylesheet" href={fonts} precedence="default" /></>}
+      <div className="site-theme flex min-h-screen flex-col" style={themeVars(c.theme)}>
         {c.preview && (
-          <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-4 bg-[#b8924a] px-4 py-2 text-center text-xs text-black">
+          <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-4 bg-gold px-4 py-2 text-center text-xs text-black">
             <b>Preview: you are seeing your unpublished changes.</b>
             <Link href="/admin" className="underline">Back to admin to publish</Link>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a route handler, needs a full page load */}
             <a href="/admin/preview/exit" className="underline">Exit preview</a>
           </div>
         )}
-        {s.announcement && <div className="bg-[#24140b] px-4 py-2 text-center text-[10px] tracking-wide text-white/80">{s.announcement}</div>}
-        <header className="sticky top-0 z-40 border-b border-black/5 bg-white/95 backdrop-blur">
+        {s.announcement && <div className="bg-[var(--bar)] px-4 py-2 text-center text-[10px] tracking-wide text-white/80">{s.announcement}</div>}
+        <header className="sticky top-0 z-40 border-b border-black/5 bg-ivory/95 backdrop-blur">
           <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_auto_1fr] items-center px-6 py-4">
             <nav aria-label="Main" className="hidden flex-wrap items-center gap-x-5 gap-y-1 text-[11px] md:flex">
               <Link href="/shop" className="hover:opacity-50">{w.footerShop}</Link>
@@ -69,7 +76,17 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </div>
         </header>
         <main className="flex-1">{children}</main>
-        <footer className="bg-[#24140b] text-white">
+        {pl.popup.on && <Popup p={pl.popup} button={w.subscribeButton} placeholder={w.emailPlaceholder} />}
+        {pl.whatsapp.on && <WhatsApp number={pl.whatsapp.number || s.whatsapp} text={pl.whatsapp.text} />}
+        <footer className="bg-[var(--bar)] text-white">
+          {pl.newsletter.on && (
+            <div className="border-b border-white/10">
+              <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-6 py-12 md:flex-row md:items-center md:justify-between">
+                <div><h2 className="text-2xl tracking-[-0.03em]">{pl.newsletter.title}</h2>{pl.newsletter.text && <p className="mt-1 text-xs opacity-60">{pl.newsletter.text}</p>}</div>
+                <SignupForm source="footer" button={w.subscribeButton} placeholder={w.emailPlaceholder} dark />
+              </div>
+            </div>
+          )}
           <div className="mx-auto grid max-w-[1280px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
               <p className="text-lg font-extrabold tracking-[-0.04em] uppercase">{s.brand}</p>

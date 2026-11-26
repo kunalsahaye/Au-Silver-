@@ -1,4 +1,4 @@
-import type { CategoryItem, Content, Customer, PageItem, Product, Section, SiteSettings, Slide } from "./types";
+import type { CategoryItem, Content, Customer, PageItem, Plugins, Product, Section, SiteSettings, Slide, Theme } from "./types";
 
 export const defaultSettings: SiteSettings = {
   brand: "Au Silver",
@@ -74,11 +74,27 @@ export const seedProducts: Product[] = [
 export const defaultSections: Section[] = [
   { key: "slides", on: true }, { key: "bestsellers", on: true }, { key: "categories", on: true },
   { key: "story", on: true }, { key: "more", on: true }, { key: "customers", on: true }, { key: "process", on: true },
+  { key: "reels", on: true }, { key: "reviews", on: true }, { key: "newArrivals", on: false },
 ];
 export const sectionNames: Record<Section["key"], string> = {
   slides: "Slides at the top", bestsellers: "Bestsellers row", categories: "Shop by category",
   story: "Our story (dark section with photos)", more: "Second product row", customers: "Happy customers",
-  process: "Our process (photo and About text)",
+  process: "Our process (photo and About text)", reels: "Reels (vertical videos, e.g. from Instagram)",
+  reviews: "Customer reviews (written testimonials)", newArrivals: "New arrivals row",
+};
+export const defaultTheme: Theme = {
+  background: "#ffffff", text: "#24140b", soft: "#f4f2ee", soft2: "#eeeae5", dark: "#2a170d", accent: "#24140b", gold: "#b9894f", bar: "#24140b",
+  headingFont: "Inter", bodyFont: "Inter", headingWeight: "bold", corners: "square",
+};
+export const defaultPlugins: Plugins = {
+  popup: { on: false, title: "Get 10% off your first order", text: "Join our list for new pieces and silver care tips.", image: "", coupon: "WELCOME10", button: "Shop now", href: "/shop", email: true, delay: 8, exit: true, days: 7 },
+  newsletter: { on: true, title: "Join the Au Silver list", text: "New pieces, offers and care tips. No spam." },
+  coupons: { on: false },
+  upsell: { on: true, productTitle: "Complete the look", cartTitle: "You might also love" },
+  shipBar: { on: true },
+  whatsapp: { on: false, number: "", text: "Hi! I have a question about a piece on your website." },
+  recent: { on: true, title: "Recently viewed" },
+  stickyBuy: { on: true },
 };
 export const defaultSlides: Slide[] = [];
 export const defaultCustomers: Customer[] = [];
@@ -102,4 +118,5 @@ export const defaultPages = (aboutBody: string): PageItem[] => [
 export const defaultContent = (site: SiteSettings = defaultSettings): Content => ({
   site, sections: defaultSections, slides: defaultSlides, customers: defaultCustomers,
   categories: defaultCategories, pages: defaultPages(site.aboutBody), words: {},
+  theme: defaultTheme, reels: [], reviews: [], coupons: [], plugins: defaultPlugins,
 });

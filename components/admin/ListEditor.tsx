@@ -5,7 +5,7 @@ import MediaField from "./MediaField";
 export interface ListField {
   key: string;
   label: string;
-  type: "text" | "textarea" | "photo" | "video" | "check" | "stars" | "select";
+  type: "text" | "textarea" | "photo" | "video" | "check" | "stars" | "select" | "number" | "date";
   placeholder?: string;
   hint?: string;
   options?: [string, string][];
@@ -87,7 +87,7 @@ export default function ListEditor({ name, fields, items: initial, blank, addLab
                       ? <textarea rows={6} value={String(v ?? "")} placeholder={f.placeholder} onChange={(e) => set(i, f.key, e.target.value)} className="field" />
                       : f.type === "select"
                         ? <select value={String(v ?? "")} onChange={(e) => set(i, f.key, e.target.value)} className="field">{f.options?.map(([val, l]) => <option key={val} value={val}>{l}</option>)}</select>
-                        : <input value={String(v ?? "")} placeholder={f.placeholder} onChange={(e) => set(i, f.key, e.target.value)} className="field" />}
+                        : <input type={f.type === "number" || f.type === "date" ? f.type : "text"} value={String(v ?? "")} placeholder={f.placeholder} onChange={(e) => set(i, f.key, e.target.value)} className="field" />}
                     {f.hint && <span className="mt-1 block text-xs opacity-50">{f.hint}</span>}
                   </label>
                 );

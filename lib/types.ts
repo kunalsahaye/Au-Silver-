@@ -94,6 +94,9 @@ export interface Order {
   address: string;
   items: OrderItem[];
   total: number;
+  /** Discount code used, and how much it took off. */
+  coupon?: string | null;
+  discount?: number | null;
   status: "new" | "confirmed" | "shipped" | "delivered" | "cancelled";
   created_at: string;
 }
@@ -111,7 +114,29 @@ export interface CategoryItem {
   description: string; seoTitle: string; seoDescription: string;
 }
 export interface PageItem { slug: string; title: string; body: string; inMenu: boolean; seoTitle: string; seoDescription: string; image: string }
-export type SectionKey = "slides" | "bestsellers" | "categories" | "story" | "more" | "customers" | "process";
+export type SectionKey = "slides" | "bestsellers" | "categories" | "story" | "more" | "customers" | "process" | "reels" | "reviews" | "newArrivals";
+
+/** Colours and fonts for the whole shop. */
+export interface Theme {
+  background: string; text: string; soft: string; soft2: string; dark: string; accent: string; gold: string; bar: string;
+  headingFont: string; bodyFont: string; headingWeight: "bold" | "normal"; corners: "square" | "soft" | "round";
+}
+/** A vertical (9:16) video for the reels row. */
+export interface Reel { id: string; media: string; poster: string; caption: string; href: string; where: "home" | "product" | "both"; instagram: string }
+/** A written customer review (testimonial). */
+export interface Review { id: string; name: string; place: string; text: string; rating: number; product: string }
+export interface Coupon { code: string; kind: "percent" | "amount" | "shipping"; value: number; minOrder: number; expires: string; on: boolean }
+/** Shopify-style add-ons the owner switches on and sets up in Plugins. */
+export interface Plugins {
+  popup: { on: boolean; title: string; text: string; image: string; coupon: string; button: string; href: string; email: boolean; delay: number; exit: boolean; days: number };
+  newsletter: { on: boolean; title: string; text: string };
+  coupons: { on: boolean };
+  upsell: { on: boolean; productTitle: string; cartTitle: string };
+  shipBar: { on: boolean };
+  whatsapp: { on: boolean; number: string; text: string };
+  recent: { on: boolean; title: string };
+  stickyBuy: { on: boolean };
+}
 export interface Section { key: SectionKey; on: boolean }
 
 /** Everything the "Publish" button controls. */
@@ -122,6 +147,13 @@ export interface Content {
   customers: Customer[];
   categories: CategoryItem[];
   pages: PageItem[];
+  theme: Theme;
+  reels: Reel[];
+  reviews: Review[];
+  coupons: Coupon[];
+  plugins: Plugins;
   /** Small words used around the shop (buttons, headings). Keys in lib/words.ts. */
   words: Record<string, string>;
 }
+
+export interface Subscriber { id: string; email: string; source: string; created_at: string }

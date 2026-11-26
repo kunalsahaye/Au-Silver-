@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { draftMode } from "next/headers";
 import { getRole } from "@/lib/auth";
 import { discardDraft, getDraft, publishDraft, saveDraft } from "@/lib/store";
-import type { CategoryItem, Content, Customer, PageItem, Section, SiteSettings, Slide } from "@/lib/types";
-import { defaultSections } from "@/lib/seed";
+import type { CategoryItem, Content, Coupon, Customer, PageItem, Plugins, Reel, Review, Section, SiteSettings, Slide, Theme } from "@/lib/types";
+import { defaultPlugins, defaultSections, defaultTheme } from "@/lib/seed";
+import { FONTS } from "@/lib/theme";
 import { WORDS } from "@/lib/words";
 
 /* All edits here go into the draft. Nothing changes on the shop until Publish. */
@@ -121,6 +122,108 @@ export async function saveSeo(fd: FormData) {
     for (const k of ["googleVerification", "bingVerification"] as const) {
       const m = /content=["']([^"']+)["']/.exec(c.site[k]); if (m) c.site[k] = m[1];
     }
+  });
+}
+
+export async function saveReels(fd: FormData) {
+  await update("/admin/reels", (c) => {
+    c.reels = list(fd).map((x): Reel => ({
+      id: str(x.id, 20) || newId(), media: str(x.media, 1000), poster: str(x.poster, 1000), caption: str(x.caption, 200),
+      href: str(x.href, 300), where: (["home", "product", "both"].includes(String(x.where)) ? x.where : "both") as Reel["where"], instagram: str(x.instagram, 300),
+    })).filter((x) => x.media || x.poster);
+  });
+}
+
+export async function saveReviews(fd: FormData) {
+  await update("/admin/reviews", (c) => {
+    c.reviews = list(fd).map((x): Review => ({
+      id: str(x.id, 20) || newId(), name: str(x.name, 80), place: str(x.place, 80), text: str(x.text, 800),
+      rating: Math.min(5, Math.max(1, Math.round(Number(x.rating) || 5))), product: str(x.product, 120),
+    })).filter((x) => x.text);
+  });
+}
+
+export async function saveTheme(fd: FormData) {
+  await update("/admin/theme", (c) => {
+    const t: Theme = { ...defaultTheme, ...c.theme };
+    for (const k of ["background", "text", "soft", "soft2", "dark", "accent", "gold", "bar"] as const) {
+      const v = str(fd.get(k), 7); if (/^#[0-9a-f]{6}$/i.test(v)) t[k] = v.toLowerCase();
+    }
+    const hf = str(fd.get("headingFont"), 40), bf = str(fd.get("bodyFont"), 40);
+    if (FONTS[hf]) t.headingFont = hf;
+    if (FONTS[bf]) t.bodyFont = bf;
+    t.headingWeight = fd.get("headingWeight") === "normal" ? "normal" : "bold";
+    const cr = str(fd.get("corners"), 10); t.corners = cr === "round" || cr === "soft" ? cr : "square";
+    if (fd.get("reset") === "1") Object.assign(t, defaultTheme);
+    c.theme = t;
+  });
+}
+
+export async function savePlugins(fd: FormData) {
+  await update("/admin/plugins", (c) => {
+    const on = (k: string) => fd.get(`${k}.on`) === "on";
+    const t = (k: string, max = 300) => str(fd.get(k), max);
+    const n = (k: string, d: number, lo = 0, hi = 365) => { const v = Number(fd.get(k)); return Number.isFinite(v) && fd.get(k) !== "" ? Math.min(hi, Math.max(lo, v)) : d; };
+    const d = defaultPlugins;
+    const p: Plugins = {
+      popup: { on: on("popup"), title: t("popup.title", 120), text: t("popup.text", 400), image: t("popup.image", 1000), coupon: t("popup.coupon", 40).toUpperCase(),
+        button: t("popup.button", 40), href: t("popup.href", 300), email: fd.get("popup.email") === "on", delay: n("popup.delay", d.popup.delay, 0, 120), exit: fd.get("popup.exit") === "on", days: n("popup.days", d.popup.days, 0, 365) },
+      newsletter: { on: on("newsletter"), title: t("newsletter.title", 120), text: t("newsletter.text", 300) },
+      coupons: { on: on("coupons") },
+      upsell: { on: on("upsell"), productTitle: t("upsell.productTitle", 80) || d.upsell.productTitle, cartTitle: t("upsell.cartTitle", 80) || d.upsell.cartTitle },
+      shipBar: { on: on("shipBar") },
+      whatsapp: { on: on("whatsapp"), number: t("whatsapp.number", 30), text: t("whatsapp.text", 300) },
+      recent: { on: on("recent"), title: t("recent.title", 80) || d.recent.title },
+      stickyBuy: { on: on("stickyBuy") },
+    };
+    c.plugins = p;
+    if (fd.has("coupons")) {
+      const seen = new Set<string>();
+      c.coupons = (() => { try { const v = JSON.parse(String(fd.get("coupons"))); return Array.isArray(v) ? v.slice(0, 100) : []; } catch { return []; } })()
+        .map((x: Record<string, unknown>): Coupon => ({
+          code: str(x.code, 30).toUpperCase().replace(/[^A-Z0-9_-]/g, ""),
+          kind: (["percent", "amount", "shipping"].includes(String(x.kind)) ? x.kind : "percent") as Coupon["kind"],
+          value: Math.max(0, Number(x.value) || 0), minOrder: Math.max(0, Number(x.minOrder) || 0),
+          expires: /^\d{4}-\d{2}-\d{2}$/.test(String(x.expires)) ? String(x.expires) : "", on: !!x.on,
+        }))
+        .filter((x: Coupon) => x.code && !seen.has(x.code) && seen.add(x.code));
+    }
+  });
+}
+
+/* ---------- Instagram ---------- */
+export async function connectInstagram(fd: FormData) {
+  await guard();
+  const { checkToken } = await import("@/lib/instagram");
+  const { saveInstagram } = await import("@/lib/store");
+  const token = str(fd.get("token"), 1000);
+  try {
+    const user = await checkToken(token);
+    await saveInstagram({ token, user, refreshed: new Date().toISOString() });
+  } catch (e) { redirect(`/admin/reels?ig=${encodeURIComponent((e as Error).message.slice(0, 150))}`); }
+  redirect("/admin/reels?ig=ok");
+}
+export async function disconnectInstagram() {
+  await guard();
+  const { saveInstagram } = await import("@/lib/store");
+  await saveInstagram(null);
+  redirect("/admin/reels");
+}
+/** Copies an Instagram post into the shop's own storage (Instagram's links expire) and adds it as a reel. */
+export async function importInstagram(fd: FormData) {
+  await guard();
+  const { getPost } = await import("@/lib/instagram");
+  const { copyIntoStorage, storageEnabled } = await import("@/lib/uploads");
+  const post = await getPost(str(fd.get("id"), 40));
+  if (!post) redirect("/admin/reels?ig=That post could not be found.");
+  const keep = async (u: string) => (storageEnabled ? copyIntoStorage(u) : u);
+  let media = "", poster = "";
+  try {
+    media = await keep(post.media);
+    poster = post.type === "VIDEO" && post.thumb !== post.media ? await keep(post.thumb) : "";
+  } catch (e) { redirect(`/admin/reels?ig=${encodeURIComponent(`Could not copy the post: ${(e as Error).message}`.slice(0, 150))}`); }
+  await update("/admin/reels", (c) => {
+    c.reels = [...c.reels, { id: newId(), media, poster, caption: post.caption.split("\n")[0].slice(0, 200), href: "", where: "both", instagram: post.link }];
   });
 }
 

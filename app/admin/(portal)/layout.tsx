@@ -13,8 +13,8 @@ export default async function Portal({ children }: { children: React.ReactNode }
   const s = content.site;
   const links = [
     ["Home", "/admin"], ["Products", "/admin/products"], ["Orders", "/admin/orders"], ["Enquiries", "/admin/enquiries"],
-    ["Homepage", "/admin/homepage"], ["Slides", "/admin/homepage/slides"], ["Happy customers", "/admin/homepage/customers"],
-    ["Categories", "/admin/categories"], ["Pages", "/admin/pages"], ["Words on the site", "/admin/words"], ["Shop settings", "/admin/settings"], ["Google and SEO", "/admin/seo"],
+    ["Homepage", "/admin/homepage"], ["Slides", "/admin/homepage/slides"], ["Happy customers", "/admin/homepage/customers"], ["Reels", "/admin/reels"], ["Reviews", "/admin/reviews"],
+    ["Categories", "/admin/categories"], ["Pages", "/admin/pages"], ["Words on the site", "/admin/words"], ["Shop settings", "/admin/settings"], ["Google and SEO", "/admin/seo"], ["Plugins", "/admin/plugins"], ["Email sign-ups", "/admin/subscribers"], ["Colours and fonts", "/admin/theme"],
   ];
   return (
     <div className="min-h-screen bg-[#f2ece6] md:grid md:grid-cols-[230px_1fr]">

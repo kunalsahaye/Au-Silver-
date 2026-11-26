@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { defaultContent, defaultSections, defaultSettings, seedProducts } from "./seed";
+import { defaultContent, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
-import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, SiteSettings } from "./types";
+import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, SiteSettings, Subscriber } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,6 +19,7 @@ interface Demo {
   products: Product[]; settings: SiteSettings;
   enquiries: Enquiry[]; orders: Order[]; views: PageView[];
   kv?: Record<string, unknown>;
+  subscribers?: Subscriber[];
 }
 const FILE = path.join(os.tmpdir(), `demo-${path.basename(process.cwd())}.json`);
 function load(): Demo {
@@ -144,6 +145,12 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   out.categories = out.categories.map((x: Partial<CategoryItem>) => ({ ...blankCat, ...x }) as CategoryItem);
   out.pages = out.pages.map((x: Partial<PageItem>) => ({ ...blankPage, ...x }) as PageItem);
   out.words = out.words ?? {};
+  out.theme = { ...defaultTheme, ...(out.theme ?? {}) };
+  out.reels = Array.isArray(out.reels) ? out.reels : [];
+  out.reviews = Array.isArray(out.reviews) ? out.reviews : [];
+  out.coupons = Array.isArray(out.coupons) ? out.coupons : [];
+  const pl = (out.plugins ?? {}) as Partial<Content["plugins"]>;
+  out.plugins = Object.fromEntries(Object.entries(defaultPlugins).map(([k, v]) => [k, { ...v, ...(pl[k as keyof typeof pl] ?? {}) }])) as Content["plugins"];
   return out;
 }
 
@@ -170,6 +177,40 @@ export async function publishDraft() {
   await saveSettings(site);
   await kvDelete("draft");
 }
+
+/* ---------- email sign-ups ---------- */
+/** Adds an email to the list. Returns false if it was already there. */
+export async function addSubscriber(email: string, source: string): Promise<boolean> {
+  await ready();
+  email = email.trim().toLowerCase();
+  if (sb) {
+    const { error } = await sb.from("subscribers").insert({ email, source });
+    if (error && error.code !== "23505") throw new Error(`Could not save email: ${error.message}`);
+    return !error;
+  }
+  const d = load(); d.subscribers ??= [];
+  if (d.subscribers.some((x) => x.email === email)) return false;
+  d.subscribers.unshift({ id: uid(), email, source, created_at: new Date().toISOString() }); save(d);
+  return true;
+}
+export async function getSubscribers(): Promise<Subscriber[]> {
+  await ready();
+  if (sb) {
+    const { data } = await sb.from("subscribers").select("*").order("created_at", { ascending: false });
+    return (data as Subscriber[]) ?? [];
+  }
+  return load().subscribers ?? [];
+}
+export async function deleteSubscriber(id: string) {
+  await ready();
+  if (sb) { await sb.from("subscribers").delete().eq("id", id); return; }
+  const d = load(); d.subscribers = (d.subscribers ?? []).filter((x) => x.id !== id); save(d);
+}
+
+/* ---------- Instagram connection (kept apart from the content: the key is private) ---------- */
+export interface InstagramLink { token: string; refreshed: string; user: string }
+export const getInstagram = () => kvGet<InstagramLink>("instagram");
+export const saveInstagram = (v: InstagramLink | null) => (v ? kvSet("instagram", v) : kvDelete("instagram"));
 
 /* ---------- enquiries ---------- */
 export async function createEnquiry(e: Pick<Enquiry, "name" | "email" | "phone" | "message" | "product_name">) {

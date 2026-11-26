@@ -11,6 +11,10 @@ const tiles = [
   { href: "/admin/settings", title: "Shop settings", text: "Offers, shipping, Instagram", icon: "⚙" },
   { href: "/admin/seo", title: "Google and SEO", text: "Search, Maps, Shopping, sharing", icon: "G" },
   { href: "/admin/words", title: "Words on the site", text: "Buttons, headings, messages", icon: "Aa" },
+  { href: "/admin/reels", title: "Reels and Instagram", text: "Vertical videos, pick from Instagram", icon: "◧" },
+  { href: "/admin/reviews", title: "Customer reviews", text: "Written testimonials", icon: "★" },
+  { href: "/admin/plugins", title: "Plugins", text: "Popup, coupons, upsell, WhatsApp", icon: "⚡" },
+  { href: "/admin/theme", title: "Colours and fonts", text: "Palette, fonts, button shape", icon: "◐" },
   { href: "/admin/orders", title: "Orders", text: "New orders and their status", icon: "☰" },
   { href: "/", title: "View the shop", text: "Opens your live website", icon: "↗", external: true },
 ];

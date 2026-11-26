@@ -40,10 +40,15 @@ body { background: var(--ivory); color: var(--ink); font-family: "Inter Variable
 @keyframes fadeUp { from { opacity:0; transform: translateY(18px) } to { opacity:1; transform:none } }
 .fade-up { animation: fadeUp .9s cubic-bezier(.2,.7,.2,1) both; }
 
-.site-theme { --ivory:#fff; --cream:#f4f2ee; --ink:#24140b; --blush:#eeeae5; --burgundy:#24140b; --wine:#2a170d; --gold:#b9894f; background:#fff; color:var(--ink); }
-.site-theme .serif { font-family:"Inter Variable",system-ui,sans-serif; font-style:normal; font-weight:700; letter-spacing:-.035em; }
+.site-theme { --ivory:#fff; --cream:#f4f2ee; --ink:#24140b; --blush:#eeeae5; --burgundy:#24140b; --wine:#2a170d; --gold:#b9894f; --bar:#24140b; --radius:0px; --radius-box:0px; --head-weight:700;
+  --font-head:"Inter Variable",system-ui,sans-serif; --font-body:"Inter Variable",system-ui,sans-serif;
+  background:var(--ivory); color:var(--ink); font-family:var(--font-body); }
+.site-theme h1, .site-theme h2, .site-theme h3, .site-theme .serif { font-family:var(--font-head); font-weight:var(--head-weight); }
+.site-theme .serif { font-style:normal; letter-spacing:-.035em; }
 .site-theme .italic { font-style:normal; }
-.site-theme .btn { border-radius:0; }
-.site-theme .field { border-radius:0; }
+.site-theme .btn { border-radius:var(--radius); }
+.site-theme .btn-dark:hover { background:var(--burgundy); filter:brightness(1.15); }
+.site-theme .field { border-radius:min(var(--radius), 12px); }
+.site-theme .rounded-box { border-radius:var(--radius-box); }
 .no-scrollbar::-webkit-scrollbar { display:none; }
 .no-scrollbar { scrollbar-width:none; }

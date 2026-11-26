@@ -4,6 +4,7 @@ import Photo from "@/components/Photo";
 import ProductCard from "@/components/ProductCard";
 import ProductArt from "@/components/ProductArt";
 import Slider from "@/components/Slider";
+import Reels from "@/components/Reels";
 import { getProducts } from "@/lib/store";
 import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
@@ -36,6 +37,7 @@ export default async function Home() {
   const picks = [...all.filter((p) => p.bestseller), ...all.filter((p) => !p.bestseller)];
   const first = picks.slice(0, 7);
   const second = [...all.filter((p) => p.featured), ...all.filter((p) => !p.featured)].slice(0, 7);
+  const fresh = [...all].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
   const count = (slug: string) => all.filter((p) => p.category === slug).length;
 
   const sections: Record<SectionKey, React.ReactNode> = {
@@ -67,7 +69,7 @@ export default async function Home() {
         <h2 className="mb-8 text-4xl font-bold tracking-[-0.045em] md:text-5xl">{w.categoriesTitle}</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {c.categories.filter((x) => !x.parent).map((x) => (
-            <Link key={x.slug} href={`/shop/${x.slug}`} className="group relative block aspect-[3/4] overflow-hidden bg-[#f4f2ee]">
+            <Link key={x.slug} href={`/shop/${x.slug}`} className="group relative block aspect-[3/4] overflow-hidden bg-cream">
               {x.image ? <Photo src={x.image} alt={x.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
                 : <div className="h-full w-full p-[18%] transition duration-500 group-hover:scale-105"><ProductArt category={x.slug} metal="silver" id={`cat-${x.slug}`} /></div>}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-4 text-white">
@@ -80,7 +82,7 @@ export default async function Home() {
     ),
 
     story: (
-      <section className="grid bg-[#2a170d] text-white md:grid-cols-[1fr_1.1fr]">
+      <section className="grid bg-wine text-white md:grid-cols-[1fr_1.1fr]">
         <div className="grid grid-cols-[1fr_70px] md:grid-cols-[1fr_90px]">
           <div className="flex flex-col justify-between p-8 md:p-12">
             <h2 className="max-w-sm text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-7xl">{s.storyTitle}</h2>
@@ -98,7 +100,7 @@ export default async function Home() {
         <Scroller>
           {second.map((p, i) => (
             <Link key={p.id} href={`/product/${p.slug}`} className="group w-[180px] shrink-0 self-end md:w-[230px]">
-              <div className="overflow-hidden bg-[#f4f2ee]" style={{ aspectRatio: i === 2 ? "3/4" : "1/1" }}>
+              <div className="overflow-hidden bg-cream" style={{ aspectRatio: i === 2 ? "3/4" : "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {p.image_url || ph ? <img src={p.image_url || ph} alt={p.seo.alt || p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                   : <div className="h-full w-full p-[12%] transition duration-500 group-hover:scale-105"><ProductArt category={p.category} metal={p.metal} id={`b2-${p.id}`} /></div>}
@@ -111,7 +113,7 @@ export default async function Home() {
     ),
 
     customers: c.customers.length > 0 && (
-      <section className="bg-[#f4f2ee] py-20">
+      <section className="bg-cream py-20">
         <div className="mx-auto max-w-[1280px] px-6">
           <p className="mb-2 text-[10px]">{w.customersEyebrow}</p>
           <h2 className="mb-10 text-5xl font-bold tracking-[-0.045em] md:text-6xl">{w.customersTitle}</h2>
@@ -120,7 +122,7 @@ export default async function Home() {
               <figure key={x.id} className="w-[260px] shrink-0 snap-start bg-white md:w-[300px]">
                 {x.media && <Media src={x.media} kind={x.kind} tone="light" alt={x.name} className="aspect-[4/5] w-full" />}
                 <figcaption className="p-5">
-                  <p className="text-[#b8924a]" aria-label={`${x.rating} out of 5 stars`}>{"★".repeat(x.rating)}<span className="opacity-20">{"★".repeat(5 - x.rating)}</span></p>
+                  <p className="text-gold" aria-label={`${x.rating} out of 5 stars`}>{"★".repeat(x.rating)}<span className="opacity-20">{"★".repeat(5 - x.rating)}</span></p>
                   {x.note && <blockquote className="mt-2 text-sm leading-relaxed opacity-80">“{x.note}”</blockquote>}
                   {x.name && <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide">{x.name}</p>}
                 </figcaption>
@@ -134,11 +136,37 @@ export default async function Home() {
     process: (
       <section className="grid md:grid-cols-2">
         <Photo src={s.img7} tone="light" className="h-full min-h-[460px] w-full" />
-        <div className="flex flex-col justify-between bg-[#eeeae5] p-8 md:p-14">
+        <div className="flex flex-col justify-between bg-blush p-8 md:p-14">
           <h2 className="max-w-xs text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-6xl">{s.processTitle}</h2>
           <div className="mx-auto my-8 h-28 w-28">{s.img9 ? <Photo src={s.img9} alt="" className="h-full w-full rounded-full" /> : <ProductArt category="rings" metal="silver" id="proc" />}</div>
           <div className="max-w-sm text-[11px] leading-relaxed"><p className="whitespace-pre-line opacity-80">{s.aboutBody.split("\n\n")[0]}</p><Link href="/about" className="mt-3 inline-block underline">{w.aboutLink}</Link></div>
         </div>
+      </section>
+    ),
+
+    reels: <Reels reels={c.reels.filter((r) => r.where !== "product")} title={w.reelsTitle} eyebrow={w.reelsEyebrow} />,
+
+    reviews: c.reviews.length > 0 && (
+      <section className="mx-auto max-w-[1280px] px-6 py-16">
+        <p className="mb-2 text-[10px]">{w.reviewsEyebrow}</p>
+        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {c.reviews.slice(0, 9).map((r) => (
+            <figure key={r.id} className="rounded-box bg-cream p-6">
+              <p className="text-gold" aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}<span className="opacity-25">{"★".repeat(5 - r.rating)}</span></p>
+              <blockquote className="mt-3 text-sm leading-relaxed opacity-85">“{r.text}”</blockquote>
+              <figcaption className="mt-4 text-[11px] font-semibold tracking-wide uppercase">{r.name}{r.place && <span className="font-normal opacity-60"> · {r.place}</span>}</figcaption>
+              {r.product && all.some((p) => p.slug === r.product) && <Link href={`/product/${r.product}`} className="mt-1 block text-[11px] underline opacity-60">{all.find((p) => p.slug === r.product)!.name}</Link>}
+            </figure>
+          ))}
+        </div>
+      </section>
+    ),
+
+    newArrivals: (
+      <section className="mx-auto max-w-[1280px] px-6 py-16">
+        <div className="mb-8 flex items-end justify-between"><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.newArrivalsTitle}</h2><Link href="/shop?sort=new" className="text-[11px] underline">{w.shopNow} →</Link></div>
+        <Scroller>{fresh.map((p) => <div key={p.id} className="w-[210px] shrink-0 md:w-[260px]"><ProductCard p={p} cur={s.currency} placeholder={ph} soldOut={w.soldOut} /></div>)}</Scroller>
       </section>
     ),
   };
