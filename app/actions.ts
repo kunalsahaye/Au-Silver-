@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
-import { createEnquiry, createOrder } from "@/lib/store";
+import { createEnquiry, createOrder, getProducts, getSettings } from "@/lib/store";
+import { money } from "@/lib/format";
 import { notify } from "@/lib/mail";
 import type { OrderItem } from "@/lib/types";
 
@@ -21,17 +22,31 @@ export async function submitEnquiry(fd: FormData) {
 }
 
 export async function placeOrder(fd: FormData) {
-  let items: OrderItem[] = [];
-  try { items = JSON.parse(clean(fd.get("items"), 20000)); } catch {}
-  items = items.filter((i) => i && i.qty > 0).slice(0, 50);
+  // The browser only tells us which pieces and how many. Names, prices and the total come from our own product list.
+  let raw: { slug?: unknown; qty?: unknown }[] = [];
+  try { raw = JSON.parse(clean(fd.get("items"), 20000)); } catch {}
+  if (!Array.isArray(raw)) raw = [];
+  const qty = new Map<string, number>();
+  for (const r of raw.slice(0, 50)) {
+    const slug = String(r?.slug ?? ""), q = Math.floor(Number(r?.qty));
+    if (slug && q > 0) qty.set(slug, Math.min(20, (qty.get(slug) ?? 0) + q));
+  }
+  const products = await getProducts();
+  const items: OrderItem[] = [];
+  for (const [slug, q] of qty) {
+    const p = products.find((x) => x.slug === slug);
+    if (p) items.push({ slug, name: p.name, price: Number(p.price), qty: q });
+  }
   const o = {
     name: clean(fd.get("name"), 100), email: clean(fd.get("email"), 150),
     phone: clean(fd.get("phone"), 40), address: clean(fd.get("address"), 500), items,
-    total: items.reduce((a, b) => a + Number(b.price) * Number(b.qty), 0),
+    total: items.reduce((a, b) => a + b.price * b.qty, 0),
   };
   if (!o.name || !o.email || !o.address || !items.length) redirect("/cart?error=1");
-  await createOrder(o);
+  const res = await createOrder(o);
+  if (!res.ok) redirect(`/cart?soldout=${encodeURIComponent(res.soldOut)}`);
+  const cur = (await getSettings()).currency;
   await notify(`New order from ${o.name}`,
-    `<p><b>${esc(o.name)}</b> — ${esc(o.phone)}</p><p>${esc(o.address)}</p><ul>${items.map((i) => `<li>${esc(String(i.name))} × ${Number(i.qty)}</li>`).join("")}</ul><p>Total: ${o.total}</p>`);
+    `<p><b>${esc(o.name)}</b> (${esc(o.email)}, ${esc(o.phone)})</p><p>${esc(o.address)}</p><ul>${items.map((i) => `<li>${esc(i.name)} × ${i.qty} at ${esc(money(cur, i.price))}</li>`).join("")}</ul><p>Total: ${esc(money(cur, o.total))}</p>`);
   redirect("/cart?placed=1");
 }

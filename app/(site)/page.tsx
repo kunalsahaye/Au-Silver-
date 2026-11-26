@@ -70,7 +70,7 @@ export default async function Home() {
       <section className="grid md:grid-cols-2">
         <Photo src={s.img7} tone="light" className="h-full min-h-[460px] w-full" />
         <div className="flex flex-col justify-between bg-[#eeeae5] p-8 md:p-14">
-          <h2 className="max-w-xs text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-6xl">We believe in our process</h2>
+          <h2 className="max-w-xs text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-6xl">{s.processTitle}</h2>
           <div className="mx-auto my-8 h-28 w-28"><ProductArt category="rings" metal="silver" id="proc" /></div>
           <div className="max-w-sm text-[11px] leading-relaxed"><p className="whitespace-pre-line opacity-80">{s.aboutBody.split("\n\n")[0]}</p><Link href="/about" className="mt-3 inline-block underline">About us →</Link></div>
         </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logout } from "../actions";
 import { requireRole } from "@/lib/auth";
 import { getSettings, usingSupabase } from "@/lib/store";
+import { blobEnabled } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,12 @@ export default async function Portal({ children }: { children: React.ReactNode }
       <div className="p-5 md:p-10">
         {!usingSupabase && role === "admin" && (
           <div className="mb-6 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
-            <b>Demo mode.</b> Supabase keys are not set, so data is stored temporarily. Add the env vars from the README to make it permanent.
+            <b>Demo mode.</b> No database is connected, so products, orders and content are stored temporarily and can disappear. Connect Supabase in Vercel (Storage tab) to make them permanent.
+          </div>
+        )}
+        {!blobEnabled && process.env.NODE_ENV === "production" && role === "admin" && (
+          <div className="mb-6 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
+            <b>Photo uploads are off.</b> Connect a Vercel Blob store in Vercel (Storage tab) and redeploy to upload images. Pasting image links still works.
           </div>
         )}
         {children}

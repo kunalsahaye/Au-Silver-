@@ -11,6 +11,7 @@ export const defaultSettings: SiteSettings = {
     "Every Au Silver piece is shaped in small batches from certified 925 sterling silver and finished by skilled artisans. Clean lines, a lasting shine and a fair price, made to be layered, gifted and loved for years.",
   aboutBody:
     "Au Silver is built on a simple idea: real silver jewellery should be beautiful, honest and within reach. Every design is drawn with care and made in certified 925 sterling silver.\n\nOur pieces are cast in small batches and hand-finished, with a polish that lasts and a feel that is light enough to wear from morning to midnight.\n\nAu Silver is not just jewellery. It is silver, worn with intention.",
+  processTitle: "We believe in our process",
   email: "hello@au-silver.example",
   phone: "+91 00000 00000",
   address: "Add your store address in the portal",

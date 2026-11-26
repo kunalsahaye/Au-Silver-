@@ -27,6 +27,7 @@ export interface SiteSettings {
   storyTitle: string;
   storyBody: string;
   aboutBody: string;
+  processTitle: string;
   email: string;
   phone: string;
   address: string;

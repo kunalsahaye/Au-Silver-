@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { defaultSettings, seedProducts } from "./seed";
 import type { Enquiry, Order, PageView, Product, SiteSettings } from "./types";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 export const usingSupabase = Boolean(url && key);
 const sb = usingSupabase ? createClient(url!, key!, { auth: { persistSession: false } }) : null;
@@ -19,7 +19,7 @@ interface Demo {
 const FILE = path.join(os.tmpdir(), `demo-${path.basename(process.cwd())}.json`);
 function load(): Demo {
   try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch {
-    return { products: seedProducts, settings: defaultSettings, enquiries: [], orders: [], views: [] };
+    return structuredClone({ products: seedProducts, settings: defaultSettings, enquiries: [], orders: [], views: [] });
   }
 }
 function save(d: Demo) { try { fs.writeFileSync(FILE, JSON.stringify(d)); } catch {} }
@@ -52,9 +52,16 @@ export async function saveProduct(input: Partial<Product> & { name: string }) {
     bestseller: !!input.bestseller,
     stock: Number(input.stock) || 0,
   };
+  // Keep web addresses unique: "silver-ring", "silver-ring-2", ...
+  const others = (await getProducts()).filter((x) => x.id !== input.id).map((x) => x.slug);
+  const base = slugify(row.slug) || uid();
+  row.slug = base;
+  for (let n = 2; others.includes(row.slug); n++) row.slug = `${base}-${n}`;
   if (sb) {
-    if (input.id) await sb.from("products").update(row).eq("id", input.id);
-    else await sb.from("products").insert(row);
+    const { error } = input.id
+      ? await sb.from("products").update(row).eq("id", input.id)
+      : await sb.from("products").insert(row);
+    if (error) throw new Error(`Could not save product: ${error.message}`);
     return;
   }
   const d = load();
@@ -76,7 +83,11 @@ export async function getSettings(): Promise<SiteSettings> {
   return { ...defaultSettings, ...load().settings };
 }
 export async function saveSettings(s: SiteSettings) {
-  if (sb) { await sb.from("settings").upsert({ key: "site", value: s }); return; }
+  if (sb) {
+    const { error } = await sb.from("settings").upsert({ key: "site", value: s });
+    if (error) throw new Error(`Could not save site content: ${error.message}`);
+    return;
+  }
   const d = load(); d.settings = s; save(d);
 }
 
@@ -100,11 +111,32 @@ export async function setEnquiryStatus(id: string, status: Enquiry["status"]) {
 }
 
 /* ---------- orders ---------- */
-export async function createOrder(o: Omit<Order, "id" | "status" | "created_at">) {
-  if (sb) { await sb.from("orders").insert({ ...o, status: "new" }); return; }
+type NewOrder = Omit<Order, "id" | "status" | "created_at">;
+
+/**
+ * Saves an order and takes the items out of stock in one step.
+ * Prices and totals must already be computed on the server from the product list.
+ * Returns the name of the first item that ran out, if any; nothing is saved in that case.
+ */
+export async function createOrder(o: NewOrder): Promise<{ ok: true } | { ok: false; soldOut: string }> {
+  if (sb) {
+    const { error } = await sb.rpc("place_order", { p_order: o });
+    if (error) {
+      const m = /OUT_OF_STOCK:(.*)/.exec(error.message);
+      if (m) return { ok: false, soldOut: m[1] };
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  }
   const d = load();
+  for (const i of o.items) {
+    const p = d.products.find((x) => x.slug === i.slug);
+    if (!p || p.stock < i.qty) return { ok: false, soldOut: i.name };
+  }
+  for (const i of o.items) d.products = d.products.map((x) => (x.slug === i.slug ? { ...x, stock: x.stock - i.qty } : x));
   d.orders.unshift({ ...o, id: uid(), status: "new", created_at: new Date().toISOString() });
   save(d);
+  return { ok: true };
 }
 export async function getOrders(): Promise<Order[]> {
   if (sb) {
@@ -113,9 +145,42 @@ export async function getOrders(): Promise<Order[]> {
   }
   return load().orders;
 }
-export async function setOrderStatus(id: string, status: Order["status"]) {
-  if (sb) { await sb.from("orders").update({ status }).eq("id", id); return; }
-  const d = load(); d.orders = d.orders.map((x) => (x.id === id ? { ...x, status } : x)); save(d);
+
+/** Adds (delta > 0) or removes (delta < 0) stock. Removing fails, changing nothing, if there is not enough. */
+async function adjustStock(slug: string, delta: number): Promise<boolean> {
+  if (sb) {
+    const { data, error } = await sb.rpc("adjust_stock", { p_slug: slug, p_delta: delta });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+  const d = load();
+  const p = d.products.find((x) => x.slug === slug);
+  if (!p) return delta > 0; // product deleted since: nothing to put back
+  if (p.stock + delta < 0) return false;
+  p.stock += delta; save(d);
+  return true;
+}
+
+/** Changes an order's status. Cancelling puts its items back in stock; un-cancelling takes them out again. */
+export async function setOrderStatus(id: string, status: Order["status"]): Promise<{ ok: true } | { ok: false; soldOut: string }> {
+  const order = (await getOrders()).find((x) => x.id === id);
+  if (!order) return { ok: true };
+  const was = order.status === "cancelled", now = status === "cancelled";
+  if (!was && now) {
+    for (const i of order.items) await adjustStock(i.slug, i.qty);
+  } else if (was && !now) {
+    const done: typeof order.items = [];
+    for (const i of order.items) {
+      if (!(await adjustStock(i.slug, -i.qty))) {
+        for (const j of done) await adjustStock(j.slug, j.qty);
+        return { ok: false, soldOut: i.name };
+      }
+      done.push(i);
+    }
+  }
+  if (sb) await sb.from("orders").update({ status }).eq("id", id);
+  else { const d = load(); d.orders = d.orders.map((x) => (x.id === id ? { ...x, status } : x)); save(d); }
+  return { ok: true };
 }
 
 /* ---------- analytics ---------- */
