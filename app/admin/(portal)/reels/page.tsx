@@ -18,6 +18,7 @@ export default async function Reels({ searchParams }: Q) {
           items={c.reels.map((x) => ({ ...x }))}
           blank={{ id: "", media: "", poster: "", caption: "", href: "", where: "both", instagram: "" }}
           fields={[
+            { key: "instagram", label: "Instagram reel link", type: "text", placeholder: "https://www.instagram.com/reel/…", hint: "Open the reel on Instagram, tap ⋯ › Copy link, and paste it here. It plays on your site through Instagram. Or upload a video below instead." },
             { key: "media", label: "Video (vertical works best)", type: "video" },
             { key: "poster", label: "Cover picture (optional)", type: "photo" },
             { key: "caption", label: "Caption", type: "text", placeholder: "e.g. Styling our new stacking rings" },

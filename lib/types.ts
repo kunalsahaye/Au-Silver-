@@ -65,6 +65,10 @@ export interface SiteSettings {
   latitude: string;
   longitude: string;
   openingHours: string;
+  /** Google Maps share link for the shop (used for Directions and "Read reviews on Google"). */
+  mapsLink: string;
+  /** The src of Google Maps' "Embed a map" code, for an exact map pin. */
+  mapEmbed: string;
   priceRange: string;
   whatsapp: string;
   facebook: string;
@@ -138,7 +142,7 @@ export interface HomeBlocks {
 /** A vertical (9:16) video for the reels row. */
 export interface Reel { id: string; media: string; poster: string; caption: string; href: string; where: "home" | "product" | "both"; instagram: string }
 /** A written customer review (testimonial). */
-export interface Review { id: string; name: string; place: string; text: string; rating: number; product: string }
+export interface Review { id: string; name: string; place: string; text: string; rating: number; product: string; source?: "" | "google" }
 export interface Coupon { code: string; kind: "percent" | "amount" | "shipping"; value: number; minOrder: number; expires: string; on: boolean }
 /** Shopify-style add-ons the owner switches on and sets up in Plugins. */
 export interface Plugins {
