@@ -15,7 +15,7 @@ function write(list: string[]) {
   window.dispatchEvent(new Event(EVT));
 }
 function useWishlist() {
-  const [list, setList] = useState<string[]>([]);
+  const [list, setList] = useState<string[] | null>(null);
   useEffect(() => {
     const sync = () => setList(read());
     sync();
@@ -24,6 +24,7 @@ function useWishlist() {
   }, []);
   return list;
 }
+const useSaved = () => useWishlist() ?? [];
 
 const Heart = ({ filled }: { filled: boolean }) => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
@@ -32,7 +33,7 @@ const Heart = ({ filled }: { filled: boolean }) => (
 );
 
 export function WishButton({ slug, name }: { slug: string; name: string }) {
-  const list = useWishlist();
+  const list = useSaved();
   const on = list.includes(slug);
   return (
     <button type="button" aria-pressed={on} aria-label={on ? `Remove ${name} from your wishlist` : `Save ${name} to your wishlist`}
@@ -44,7 +45,7 @@ export function WishButton({ slug, name }: { slug: string; name: string }) {
 }
 
 export function WishLink() {
-  const n = useWishlist().length;
+  const n = useSaved().length;
   return (
     <Link href="/wishlist" aria-label={`Wishlist${n ? `, ${n} saved` : ""}`} className="relative hover:opacity-60">
       <Heart filled={n > 0} />
@@ -54,7 +55,9 @@ export function WishLink() {
 }
 
 export function WishlistView({ products, cur, placeholder, soldOut }: { products: Product[]; cur: string; placeholder: string; soldOut: string }) {
-  const list = useWishlist();
+  const loaded = useWishlist();
+  if (!loaded) return <div className="min-h-40" aria-busy="true" />;
+  const list = loaded;
   const saved = list.map((s) => products.find((p) => p.slug === s)).filter((p): p is Product => !!p);
   if (!saved.length) return <p className="text-lg opacity-60">Nothing saved yet. Tap “Save to wishlist” on any piece to keep it here. <Link href="/shop" className="underline">All jewellery →</Link></p>;
   return (
