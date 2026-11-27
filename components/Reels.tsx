@@ -16,7 +16,7 @@ function ReelCard({ r }: { r: Reel }) {
   return (
     <figure className="relative w-[200px] shrink-0 snap-start overflow-hidden rounded-box bg-wine md:w-[240px]" style={{ aspectRatio: "9/16" }}>
       {video ? (
-        <video ref={v} src={r.media} poster={r.poster || undefined} muted={muted} loop playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" aria-label={r.caption || "Video"} />
+        <video ref={v} src={r.media} poster={r.poster || undefined} muted={muted} loop playsInline preload={r.poster ? "none" : "metadata"} className="absolute inset-0 h-full w-full object-cover" aria-label={r.caption || "Video"} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={r.media || r.poster} alt={r.caption} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />

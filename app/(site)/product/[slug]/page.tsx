@@ -5,7 +5,8 @@ import ProductArt from "@/components/ProductArt";
 import ProductCard from "@/components/ProductCard";
 import Gallery from "@/components/Gallery";
 import JsonLd from "@/components/JsonLd";
-import { getProduct, getProducts } from "@/lib/store";
+import { getProduct, getProducts, getReviews } from "@/lib/store";
+import ReviewForm from "@/components/ReviewForm";
 import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
 import { baseUrl, breadcrumbLd, meta, productDescription, productLd, productTitle } from "@/lib/seo";
@@ -25,9 +26,10 @@ export async function generateMetadata({ params }: P) {
 
 export default async function ProductPage({ params }: P) {
   const { slug } = await params;
-  const [p, c, all] = await Promise.all([getProduct(slug), siteContent(), getProducts()]);
+  const [p, c, all, reviews] = await Promise.all([getProduct(slug), siteContent(), getProducts(), getReviews({ product: slug, status: "approved" })]);
   if (!p) notFound();
   const s = c.site, w = words(c.words);
+  const avg = reviews.length ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0;
   const base = await baseUrl(s);
   const cat = c.categories.find((x) => x.slug === p.category);
   const parent = cat?.parent ? c.categories.find((x) => x.slug === cat.parent) : undefined;
@@ -44,7 +46,7 @@ export default async function ProductPage({ params }: P) {
   const crumbs: [string, string][] = [["Home", "/"], [w.shopAllTitle, "/shop"], ...(parent ? [[parent.name, `/shop/${parent.slug}`] as [string, string]] : []), [catName, `/shop/${p.category}`], [p.name, `/product/${p.slug}`]];
   return (
     <div className="mx-auto max-w-7xl px-5 py-12">
-      <JsonLd data={productLd(p, c, base, catName)} />
+      <JsonLd data={productLd(p, c, base, catName, reviews)} />
       <JsonLd data={breadcrumbLd(base, crumbs)} />
       <nav aria-label="Breadcrumb" className="eyebrow mb-8 opacity-60">
         {crumbs.slice(1, -1).map(([n, h], i) => <span key={h}>{i > 0 && " › "}<Link href={h}>{n}</Link></span>)}
@@ -60,6 +62,7 @@ export default async function ProductPage({ params }: P) {
         )}
         <div>
           <h1 className="serif text-5xl leading-tight italic">{p.name}</h1>
+          {reviews.length > 0 && <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-xs"><span className="text-gold">{"★".repeat(Math.round(avg))}<span className="opacity-25">{"★".repeat(5 - Math.round(avg))}</span></span><span className="underline opacity-60">{reviews.length} review{reviews.length === 1 ? "" : "s"}</span></a>}
           <p className="mt-5 max-w-md leading-relaxed opacity-75">{p.description}</p>
           <dl className="mt-8 divide-y divide-ink/10 border-y border-ink/10 text-sm">
             {rows.map(([k, v]) => <div key={k} className="flex justify-between py-3"><dt className="opacity-60">{k}</dt><dd className="font-medium capitalize">{v}</dd></div>)}
@@ -71,6 +74,24 @@ export default async function ProductPage({ params }: P) {
           </div>
         </div>
       </div>
+      <section id="reviews" className="mt-24 grid gap-10 border-t border-black/10 pt-12 md:grid-cols-[1fr_2fr]">
+        <div>
+          <h2 className="text-3xl tracking-[-0.03em]">Reviews</h2>
+          {reviews.length > 0
+            ? <p className="mt-3 text-sm"><span className="text-4xl font-light">{avg.toFixed(1)}</span> <span className="opacity-60">out of 5 · {reviews.length} review{reviews.length === 1 ? "" : "s"}</span></p>
+            : <p className="mt-3 text-sm opacity-60">No reviews yet. Bought this piece? Tell others what you think.</p>}
+          <div className="mt-6"><ReviewForm product={p.slug} /></div>
+        </div>
+        <div className="divide-y divide-black/10">
+          {reviews.map((r) => (
+            <figure key={r.id} className="py-6 first:pt-0">
+              <p className="text-sm text-gold" aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}<span className="opacity-25">{"★".repeat(5 - r.rating)}</span></p>
+              <blockquote className="mt-2 leading-relaxed">{r.text}</blockquote>
+              <figcaption className="mt-2 text-[11px] tracking-wide uppercase opacity-60">{r.name}{r.place && ` · ${r.place}`} · {new Date(r.created_at).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
       {pairs.length > 0 && (
         <div className="mt-24">
           <h2 className="mb-8 text-3xl tracking-[-0.03em]">{pl.upsell.productTitle}</h2>

@@ -6,7 +6,6 @@ import ProductArt from "@/components/ProductArt";
 import Slider from "@/components/Slider";
 import Reels from "@/components/Reels";
 import SignupForm from "@/components/plugins/SignupForm";
-import type { Tile } from "@/lib/types";
 import { getProducts } from "@/lib/store";
 import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
@@ -46,19 +45,6 @@ export default async function Home() {
   const hint = (title: string, where: string, href: string) => c.preview ? (
     <section className="mx-auto max-w-[1280px] px-6 py-10"><Link href={href} className="block rounded-box border-2 border-dashed border-ink/20 p-8 text-center text-sm opacity-70"><b>{title}</b> is switched on but empty. Add some in Admin › {where} →</Link></section>
   ) : null;
-  const tiles = (list: Tile[], wide = false) => (
-    <div className={`grid grid-cols-2 gap-3 ${wide ? "md:grid-cols-4" : "md:grid-cols-4"}`}>
-      {list.map((t) => (
-        <Link key={t.id} href={t.href || "/shop"} className="group relative block aspect-[4/5] overflow-hidden rounded-box bg-cream">
-          {t.image ? <Photo src={t.image} alt={t.title} className="h-full w-full transition duration-500 group-hover:scale-105" />
-            : <div className="grid h-full w-full place-items-center bg-gradient-to-br from-cream to-blush p-6 text-center text-4xl opacity-60 transition duration-500 group-hover:scale-105">✦</div>}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 text-white">
-            <h3 className="text-lg leading-tight">{t.title}</h3>{t.text && <p className="mt-1 text-[11px] opacity-85">{t.text}</p>}
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
   const coll = c.categories.find((x) => x.slug === h.collection.category);
   const collItems = coll ? all.filter((p) => p.category === coll.slug || c.categories.some((x) => x.slug === p.category && x.parent === coll.slug)).slice(0, 8) : [];
   const faqPage = c.pages.find((p) => p.slug === "faq");
@@ -92,15 +78,18 @@ export default async function Home() {
     ),
 
     categories: c.categories.length > 0 && (
-      <section className="mx-auto max-w-[1280px] px-6 pb-20">
+      <section className="mx-auto max-w-[1280px] px-6 py-16 md:py-20">
         <h2 className="mb-8 text-4xl font-bold tracking-[-0.045em] md:text-5xl">{w.categoriesTitle}</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-4">
           {c.categories.filter((x) => !x.parent).map((x) => (
-            <Link key={x.slug} href={`/shop/${x.slug}`} className="group relative block aspect-[3/4] overflow-hidden bg-cream">
-              {x.image ? <Photo src={x.image} alt={x.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
-                : <div className="h-full w-full p-[18%] transition duration-500 group-hover:scale-105"><ProductArt category={x.slug} metal="silver" id={`cat-${x.slug}`} /></div>}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-4 text-white">
-                <h3 className="text-lg font-bold">{x.name}</h3><p className="text-[10px] opacity-80">{count(x.slug)} {w.pieces}</p>
+            <Link key={x.slug} href={`/shop/${x.slug}`} className="group block">
+              <div className="aspect-[3/4] overflow-hidden bg-cream">
+                {x.image ? <Photo src={x.image} alt={x.name} sizes="(min-width:768px) 25vw, 50vw" className="h-full w-full transition duration-700 group-hover:scale-[1.04]" />
+                  : <div className="h-full w-full p-[20%] transition duration-700 group-hover:scale-[1.04]"><ProductArt category={x.slug} metal="silver" id={`cat-${x.slug}`} /></div>}
+              </div>
+              <div className="mt-3 flex items-baseline justify-between gap-2">
+                <h3 className="text-[15px] font-medium tracking-[-0.01em]">{x.name}</h3>
+                <span className="text-[11px] tabular-nums opacity-50">{count(x.slug)}</span>
               </div>
             </Link>
           ))}
@@ -115,7 +104,7 @@ export default async function Home() {
             <h2 className="max-w-sm text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-7xl">{s.storyTitle}</h2>
             <p className="mt-16 max-w-sm text-[11px] leading-relaxed opacity-80">{s.storyBody}</p>
           </div>
-          <div className="grid grid-rows-4">{[s.img3, s.img4, s.img5, s.img6].map((u, i) => <Photo key={i} src={u} tone="warm" className="h-full w-full" />)}</div>
+          <div className="grid grid-rows-4">{[s.img3, s.img4, s.img5, s.img6].map((u, i) => <Photo key={i} src={u} tone="warm" sizes="90px" className="h-full w-full" />)}</div>
         </div>
         <Photo src={s.img2} tone="warm" className="h-full min-h-[420px] w-full" />
       </section>
@@ -165,27 +154,42 @@ export default async function Home() {
         <Photo src={s.img7} tone="light" className="h-full min-h-[460px] w-full" />
         <div className="flex flex-col justify-between bg-blush p-8 md:p-14">
           <h2 className="max-w-xs text-5xl leading-[0.98] font-bold tracking-[-0.045em] md:text-6xl">{s.processTitle}</h2>
-          <div className="mx-auto my-8 h-28 w-28">{s.img9 ? <Photo src={s.img9} alt="" className="h-full w-full rounded-full" /> : <ProductArt category="rings" metal="silver" id="proc" />}</div>
+          <div className="mx-auto my-8 h-28 w-28">{s.img9 ? <Photo src={s.img9} alt="" sizes="112px" className="h-full w-full rounded-full" /> : <ProductArt category="rings" metal="silver" id="proc" />}</div>
           <div className="max-w-sm text-[11px] leading-relaxed"><p className="whitespace-pre-line opacity-80">{s.aboutBody.split("\n\n")[0]}</p><Link href="/about" className="mt-3 inline-block underline">{w.aboutLink}</Link></div>
         </div>
       </section>
     ),
 
-    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : hint("Reels", "Reels", "/admin/reels"),
-
-    reviews: !c.reviews.length ? hint("Customer reviews", "Customer reviews", "/admin/reviews") : (
+    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : c.preview && (
       <section className="mx-auto max-w-[1280px] px-6 py-16">
-        <p className="mb-2 text-[10px]">{w.reviewsEyebrow}</p>
-        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {c.reviews.slice(0, 9).map((r) => (
-            <figure key={r.id} className="rounded-box bg-cream p-6">
-              <p className="text-gold" aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}<span className="opacity-25">{"★".repeat(5 - r.rating)}</span></p>
-              <blockquote className="mt-3 text-sm leading-relaxed opacity-85">“{r.text}”</blockquote>
-              <figcaption className="mt-4 text-[11px] font-semibold tracking-wide uppercase">{r.name}{r.place && <span className="font-normal opacity-60"> · {r.place}</span>}</figcaption>
-              {r.product && all.some((p) => p.slug === r.product) && <Link href={`/product/${r.product}`} className="mt-1 block text-[11px] underline opacity-60">{all.find((p) => p.slug === r.product)!.name}</Link>}
-            </figure>
-          ))}
+        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{w.reelsTitle}</h2>
+        <Link href="/admin/reels" className="no-scrollbar flex gap-3 overflow-x-auto">
+          {[0, 1, 2, 3, 4].map((i) => <span key={i} className="grid w-[200px] shrink-0 place-items-center border border-dashed border-ink/25 p-6 text-center text-xs opacity-60 md:w-[240px]" style={{ aspectRatio: "9/16" }}>{i === 0 ? "Your Instagram reels appear here. Add them in Admin › Reels →" : ""}</span>)}
+        </Link>
+      </section>
+    ),
+
+    reviews: !c.reviews.length ? hint("Testimonials", "Reviews", "/admin/reviews") : (
+      <section className="mx-auto max-w-[1280px] px-6 py-20 md:py-28">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+          <div><p className="mb-3 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reviewsEyebrow}</p><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2></div>
+          <p className="text-sm"><span className="text-gold">{"★".repeat(Math.round(c.reviews.reduce((a, r) => a + r.rating, 0) / c.reviews.length))}</span> <span className="opacity-60">{(c.reviews.reduce((a, r) => a + r.rating, 0) / c.reviews.length).toFixed(1)} from {c.reviews.length} customer{c.reviews.length === 1 ? "" : "s"}</span></p>
+        </div>
+        <div className="no-scrollbar -mx-6 flex snap-x snap-mandatory gap-8 overflow-x-auto px-6 pb-2 md:gap-10">
+          {c.reviews.slice(0, 12).map((r) => {
+            const prod = r.product ? all.find((p) => p.slug === r.product) : undefined;
+            return (
+              <figure key={r.id} className="flex w-[82%] shrink-0 snap-start flex-col border-t border-ink/15 pt-6 sm:w-[46%] lg:w-[calc((100%-80px)/3)]">
+                <span aria-hidden className="font-serif text-6xl leading-[0.6] text-gold">“</span>
+                <blockquote className="mt-4 text-lg leading-snug font-light tracking-[-0.01em] md:text-xl">{r.text}</blockquote>
+                <figcaption className="mt-auto pt-6 text-[11px]">
+                  <span className="text-gold" aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}</span>
+                  <span className="mt-1 block font-medium tracking-[0.12em] uppercase">{r.name}{r.place && <span className="font-normal opacity-50"> · {r.place}</span>}</span>
+                  {prod && <Link href={`/product/${prod.slug}`} className="mt-1 inline-block underline underline-offset-4 opacity-60">{prod.name}</Link>}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
       </section>
     ),
@@ -198,21 +202,40 @@ export default async function Home() {
     ),
 
     occasions: h.occasions.length > 0 && (
-      <section className="mx-auto max-w-[1280px] px-6 py-16">
-        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{h.occasionsTitle}</h2>
-        {tiles(h.occasions)}
+      <section className="mx-auto grid max-w-[1280px] gap-10 px-6 py-20 md:grid-cols-[1fr_1.5fr] md:gap-16 md:py-28">
+        <div className="md:sticky md:top-28 md:self-start">
+          <h2 className="text-4xl leading-[1] tracking-[-0.045em] md:text-6xl">{h.occasionsTitle}</h2>
+          {h.occasions.find((t) => t.image) && <Photo src={h.occasions.find((t) => t.image)!.image} alt={h.occasions.find((t) => t.image)!.title} sizes="(min-width:768px) 35vw, 100vw" className="mt-8 hidden aspect-[4/5] w-full md:block" />}
+        </div>
+        <ol>
+          {h.occasions.map((t, i) => (
+            <li key={t.id} className="border-t border-ink/15 last:border-b">
+              <Link href={t.href || "/shop"} className="group flex items-center gap-5 py-6 md:gap-8 md:py-8">
+                <span className="w-6 shrink-0 text-[11px] tabular-nums opacity-40">{String(i + 1).padStart(2, "0")}</span>
+                {t.image && <Photo src={t.image} alt="" sizes="80px" className="h-16 w-14 shrink-0 md:hidden" />}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-3xl leading-tight font-light tracking-[-0.035em] transition duration-500 group-hover:translate-x-1 md:text-5xl">{t.title}</span>
+                  {t.text && <span className="mt-1 block text-[13px] opacity-55">{t.text}</span>}
+                </span>
+                <span aria-hidden className="text-xl opacity-30 transition duration-500 group-hover:translate-x-1 group-hover:opacity-100">→</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
       </section>
     ),
 
     gifts: h.gifts.length > 0 && (
-      <section className="bg-cream py-16">
-        <div className="mx-auto max-w-[1280px] px-6">
-          <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{h.giftsTitle}</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="bg-cream">
+        <div className="mx-auto grid max-w-[1280px] gap-10 px-6 py-20 md:grid-cols-[1fr_3fr] md:gap-16 md:py-24">
+          <h2 className="text-4xl leading-[1] tracking-[-0.045em] md:text-5xl">{h.giftsTitle}</h2>
+          <div className="grid grid-cols-2 gap-x-6 md:grid-cols-4">
             {h.gifts.map((t) => (
-              <Link key={t.id} href={t.href || "/shop"} className="group flex items-center gap-4 rounded-box bg-ivory p-4 transition hover:shadow-md">
-                {t.image ? <Photo src={t.image} alt={t.title} className="h-16 w-16 shrink-0 rounded-box" /> : <span className="grid h-16 w-16 shrink-0 place-items-center rounded-box bg-blush text-2xl">🎁</span>}
-                <span><span className="block text-base font-semibold leading-tight">{t.title}</span>{t.text && <span className="block text-[11px] opacity-60">{t.text}</span>}</span>
+              <Link key={t.id} href={t.href || "/shop"} className="group flex flex-col border-t border-ink/20 pt-5 pb-10">
+                {t.image && <Photo src={t.image} alt={t.title} sizes="(min-width:768px) 18vw, 45vw" className="mb-5 aspect-[4/5] w-full" />}
+                <span className="text-2xl leading-tight font-light tracking-[-0.03em] md:text-[28px]">{t.title}</span>
+                {t.text && <span className="mt-1 text-[12px] opacity-55">{t.text}</span>}
+                <span className="mt-4 text-[11px] tracking-[0.18em] uppercase underline-offset-4 opacity-70 group-hover:underline">{w.shopNow}</span>
               </Link>
             ))}
           </div>
@@ -221,18 +244,16 @@ export default async function Home() {
     ),
 
     badges: h.badges.length > 0 && (
-      <section className="border-y border-black/5 py-12">
-        <div className="mx-auto max-w-[1280px] px-6">
-          {h.badgesTitle && <h2 className="mb-8 text-center text-3xl tracking-[-0.04em]">{h.badgesTitle}</h2>}
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {h.badges.map((b) => (
-              <div key={b.id} className="text-center">
-                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-cream text-lg font-semibold text-gold">{b.icon}</span>
-                <h3 className="mt-3 text-sm font-semibold">{b.title}</h3>{b.text && <p className="mt-1 text-[11px] leading-snug opacity-65">{b.text}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="border-y border-ink/10">
+        {h.badgesTitle && <h2 className="sr-only">{h.badgesTitle}</h2>}
+        <ul className="mx-auto grid max-w-[1280px] grid-cols-2 md:grid-cols-4">
+          {h.badges.map((b, i) => (
+            <li key={b.id} className={`px-6 py-7 md:py-9 ${i % 2 ? "border-l border-ink/10" : ""} ${i > 1 ? "border-t border-ink/10 md:border-t-0" : ""} ${i === 2 ? "md:border-l" : ""}`}>
+              <p className="text-[11px] font-medium tracking-[0.16em] uppercase">{b.title}</p>
+              {b.text && <p className="mt-2 max-w-[240px] text-[12px] leading-relaxed opacity-55">{b.text}</p>}
+            </li>
+          ))}
+        </ul>
       </section>
     ),
 

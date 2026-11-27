@@ -173,3 +173,6 @@ export interface Content {
 }
 
 export interface Subscriber { id: string; email: string; source: string; created_at: string }
+
+/** A review a customer wrote on a product page. */
+export interface ProductReview { id: string; product: string; name: string; place: string; rating: number; text: string; status: "pending" | "approved" | "hidden"; created_at: string }

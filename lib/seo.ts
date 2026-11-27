@@ -1,7 +1,7 @@
 import "server-only";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import type { Content, PageItem, Product, SiteSettings } from "./types";
+import type { Content, PageItem, Product, ProductReview, SiteSettings } from "./types";
 
 /** The shop's public address, e.g. https://ausilver.in (from settings, then SITE_URL, then the request). */
 export async function baseUrl(site: SiteSettings): Promise<string> {
@@ -78,7 +78,7 @@ export function breadcrumbLd(base: string, items: [string, string][]) {
   };
 }
 
-export function productLd(p: Product, c: Content, base: string, categoryName: string) {
+export function productLd(p: Product, c: Content, base: string, categoryName: string, reviews: ProductReview[] = []) {
   const s = c.site;
   const images = [p.image_url, ...p.images].filter(Boolean).map((u) => abs(base, u!)!);
   const days = (s.deliveryDays || "3-7").split("-").map((n) => Number(n.trim()) || 0);
@@ -88,6 +88,11 @@ export function productLd(p: Product, c: Content, base: string, categoryName: st
     name: p.name, description: productDescription(p), sku: p.seo.sku || p.slug, image: images.length ? images : undefined,
     brand: { "@type": "Brand", name: s.brand }, category: categoryName, material: p.material || undefined, color: p.metal,
     url: `${base}/product/${p.slug}`,
+    aggregateRating: reviews.length ? { "@type": "AggregateRating", ratingValue: (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1), reviewCount: reviews.length, bestRating: 5 } : undefined,
+    review: reviews.length ? reviews.slice(0, 10).map((r) => ({
+      "@type": "Review", reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+      author: { "@type": "Person", name: r.name }, reviewBody: r.text, datePublished: r.created_at.slice(0, 10),
+    })) : undefined,
     offers: {
       "@type": "Offer", url: `${base}/product/${p.slug}`, priceCurrency: "INR", price: Number(p.price).toFixed(2),
       availability: p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
