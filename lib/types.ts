@@ -23,7 +23,7 @@ export interface Product {
   created_at: string;
 }
 
-export interface ProductSeo { title?: string; description?: string; alt?: string; sku?: string; /** Old price shown crossed out, for a sale. */ compareAt?: number }
+export interface ProductSeo { title?: string; description?: string; alt?: string; sku?: string; /** Old price shown crossed out, for a sale. */ compareAt?: number; /** Shown on the product page only when filled in. */ weight?: string; size?: string; stone?: string }
 
 export interface SiteSettings {
   brand: string;

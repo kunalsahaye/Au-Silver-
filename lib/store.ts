@@ -305,16 +305,16 @@ type NewOrder = Omit<Order, "id" | "status" | "created_at">;
  * Prices and totals must already be computed on the server from the product list.
  * Returns the name of the first item that ran out, if any; nothing is saved in that case.
  */
-export async function createOrder(o: NewOrder): Promise<{ ok: true } | { ok: false; soldOut: string }> {
+export async function createOrder(o: NewOrder): Promise<{ ok: true; id: string } | { ok: false; soldOut: string }> {
   await ready();
   if (sb) {
-    const { error } = await sb.rpc("place_order", { p_order: o });
+    const { data, error } = await sb.rpc("place_order", { p_order: o });
     if (error) {
       const m = /OUT_OF_STOCK:(.*)/.exec(error.message);
       if (m) return { ok: false, soldOut: m[1] };
       throw new Error(error.message);
     }
-    return { ok: true };
+    return { ok: true, id: String(data ?? "") };
   }
   const d = load();
   for (const i of o.items) {
@@ -322,9 +322,10 @@ export async function createOrder(o: NewOrder): Promise<{ ok: true } | { ok: fal
     if (!p || p.stock < i.qty) return { ok: false, soldOut: i.name };
   }
   for (const i of o.items) d.products = d.products.map((x) => (x.slug === i.slug ? { ...x, stock: x.stock - i.qty } : x));
-  d.orders.unshift({ ...o, id: uid(), status: "new", created_at: new Date().toISOString() });
+  const id = uid();
+  d.orders.unshift({ ...o, id, status: "new", created_at: new Date().toISOString() });
   save(d);
-  return { ok: true };
+  return { ok: true, id };
 }
 export async function getOrders(): Promise<Order[]> {
   await ready();

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Product } from "@/lib/types";
 import ProductCard from "./ProductCard";
+import { useCart } from "./CartProvider";
 
 /** Saved pieces live in this browser only (no account needed). */
 const KEY = "wishlist";
@@ -68,16 +69,20 @@ export function WishLink() {
 
 export function WishlistView({ products, cur, placeholder, soldOut }: { products: Product[]; cur: string; placeholder: string; soldOut: string }) {
   const loaded = useWishlist();
+  const cart = useCart();
   if (!loaded) return <div className="min-h-40" aria-busy="true" />;
   const list = loaded;
   const saved = list.map((s) => products.find((p) => p.slug === s)).filter((p): p is Product => !!p);
-  if (!saved.length) return <p className="text-lg opacity-60">Nothing saved yet. Tap “Save to wishlist” on any piece to keep it here. <Link href="/shop" className="underline">All jewellery →</Link></p>;
+  if (!saved.length) return <p className="text-lg opacity-60">Nothing saved yet. Tap the heart on any piece to keep it here. Your list is saved on this device. <Link href="/shop" className="underline">All jewellery →</Link></p>;
   return (
     <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
       {saved.map((p) => (
         <div key={p.id}>
           <ProductCard p={p} cur={cur} placeholder={placeholder} soldOut={soldOut} />
-          <button type="button" onClick={() => write(read().filter((x) => x !== p.slug))} className="mt-2 text-[11px] underline opacity-60">Remove</button>
+          <div className="mt-3 flex items-center gap-4">
+            {p.stock > 0 && <button type="button" onClick={() => { cart?.add({ slug: p.slug, name: p.name, price: p.price, image: p.image_url || placeholder || undefined }); write(read().filter((x) => x !== p.slug)); }} className="border border-ink/30 px-3 py-2 text-[10px] tracking-[0.14em] uppercase hover:bg-ink hover:text-ivory">Move to bag</button>}
+            <button type="button" onClick={() => write(read().filter((x) => x !== p.slug))} className="text-[11px] underline opacity-60">Remove</button>
+          </div>
         </div>
       ))}
     </div>

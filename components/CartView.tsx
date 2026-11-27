@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
 import { placeOrder } from "@/app/actions";
 import { useCart } from "@/components/CartProvider";
 import { money, shippingFor } from "@/lib/format";
@@ -35,14 +36,25 @@ function Inner({ currency, live, shipping, w, extras }: Props) {
   const sp = useSearchParams();
   const soldOut = sp.get("soldout");
   const placed = sp.get("placed");
-  useEffect(() => { if (placed) clear(); }, [placed, clear]);
+  useEffect(() => { if (placed) { clear(); try { sessionStorage.removeItem(SAVED); } catch {} } }, [placed, clear]);
+  // Keep what the shopper typed if the page reloads (for example after a field was rejected).
+  const form = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const f = form.current; if (!f) return;
+    try { const v = JSON.parse(sessionStorage.getItem(SAVED) || "{}"); for (const [k, val] of Object.entries(v)) { const el = f.elements.namedItem(k) as HTMLInputElement | null; if (el && !el.value && typeof val === "string") el.value = val; } } catch {}
+    const keep = () => { try { sessionStorage.setItem(SAVED, JSON.stringify(Object.fromEntries(FIELDS.map((k) => [k, (f.elements.namedItem(k) as HTMLInputElement | null)?.value ?? ""])))); } catch {} };
+    f.addEventListener("input", keep); f.addEventListener("change", keep);
+    return () => { f.removeEventListener("input", keep); f.removeEventListener("change", keep); };
+  }, [saved.length]);
   useEffect(() => { if (applied) checkCoupon(applied.code, subtotal).then(setCp); }, [subtotal]); // eslint-disable-line react-hooks/exhaustive-deps
   const suggest = extras.upsell.filter((u) => !lines.some((l) => l.slug === u.slug)).slice(0, 4);
   const pct = freeOver ? Math.min(100, (subtotal / freeOver) * 100) : 0;
   if (placed) return (
     <div className="mx-auto max-w-xl px-5 py-28 text-center">
       <h1 className="serif text-5xl italic">{w.orderPlacedTitle}</h1>
+      {placed.startsWith("AU-") && <p className="mt-6 text-[11px] tracking-[0.16em] uppercase opacity-60">Order number <span className="font-mono text-sm tracking-normal opacity-100">{placed}</span></p>}
       <p className="mt-4 opacity-70">{w.orderPlaced}</p>
+      <p className="mt-2 text-sm opacity-60">Please keep your order number for any questions.</p>
       <Link href="/shop" className="btn btn-dark mt-8">{w.keepShopping}</Link>
     </div>
   );
@@ -88,15 +100,22 @@ function Inner({ currency, live, shipping, w, extras }: Props) {
         )}
       </div>
       {lines.length > 0 && (
-        <form action={placeOrder} className="space-y-3 self-start rounded-[2rem] bg-cream p-8">
-          {sp.get("error") && <p className="text-sm text-burgundy">Please complete all required fields.</p>}
+        <form ref={form} action={placeOrder} className="space-y-3 self-start rounded-[2rem] bg-cream p-8">
+          {sp.get("error") && <p role="alert" className="text-sm text-[#9a3b2f]">{ERRORS[sp.get("error")!] ?? "Please complete all required fields."}</p>}
           {soldOut && <p className="text-sm text-burgundy">Sorry, {soldOut} just sold out or has too little stock. Please adjust your bag.</p>}
           <input type="hidden" name="items" value={JSON.stringify(lines.map(({ slug, qty }) => ({ slug, qty })))} />
           <input type="hidden" name="coupon" value={applied?.code ?? ""} />
-          <input name="name" placeholder="Full name" className="field" required />
-          <input name="email" type="email" placeholder="Email" className="field" required />
-          <input name="phone" placeholder="Phone" className="field" />
-          <textarea name="address" rows={3} placeholder="Delivery address" className="field" required />
+          <p className="text-[11px] tracking-[0.16em] uppercase opacity-60">Contact</p>
+          <F label="Full name"><input name="name" autoComplete="name" className="field" required maxLength={100} /></F>
+          <F label="Email"><input name="email" type="email" autoComplete="email" className="field" required maxLength={150} /></F>
+          <F label="Mobile number" hint="10 digits, for delivery updates"><input name="phone" type="tel" inputMode="tel" autoComplete="tel-national" className="field" required pattern="^(\+?91\s?|0)?[6-9][0-9]{4}\s?[0-9]{5}$" title="A 10-digit Indian mobile number" /></F>
+          <p className="pt-3 text-[11px] tracking-[0.16em] uppercase opacity-60">Delivery address</p>
+          <F label="House, street and area"><textarea name="address" rows={2} autoComplete="street-address" className="field" required maxLength={300} /></F>
+          <div className="grid grid-cols-2 gap-3">
+            <F label="City"><input name="city" autoComplete="address-level2" className="field" required maxLength={80} /></F>
+            <F label="Pincode"><input name="pincode" inputMode="numeric" autoComplete="postal-code" className="field" required pattern="^[1-9][0-9]{5}$" maxLength={6} title="A 6-digit pincode" /></F>
+          </div>
+          <F label="State"><select name="state" autoComplete="address-level1" className="field" required defaultValue=""><option value="" disabled>Choose your state</option>{STATES.map((x) => <option key={x}>{x}</option>)}</select></F>
           <div className="space-y-1 border-t border-ink/10 pt-4 text-sm">
             <div className="flex justify-between"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
             {extras.coupons && (
@@ -113,11 +132,26 @@ function Inner({ currency, live, shipping, w, extras }: Props) {
             {ship > 0 && freeOver !== null && !extras.shipBar && <p className="text-xs opacity-60">Add {fmt(freeOver - subtotal)} more for free shipping.</p>}
           </div>
           <div className="flex justify-between text-lg"><span>Total</span><span>{fmt(total)}</span></div>
-          <button className="btn btn-dark w-full">{w.placeOrder}</button>
+          <PlaceButton label={w.placeOrder} />
           <p className="text-xs opacity-50">{w.orderNote}</p>
         </form>
       )}
     </div>
   );
+}
+const SAVED = "checkout-details";
+const FIELDS = ["name", "email", "phone", "address", "city", "pincode", "state"];
+const ERRORS: Record<string, string> = {
+  name: "Please add your full name.", email: "Please check your email address.", phone: "Please add a 10-digit Indian mobile number.",
+  address: "Please add your full delivery address, city and state.", pincode: "Please add a 6-digit pincode.",
+};
+const STATES = ["Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
+function F({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return <label className="block text-xs"><span className="mb-1 block opacity-70">{label}{hint && <span className="opacity-60"> · {hint}</span>}</span>{children}</label>;
+}
+/** Disabled while the order is being sent, so a double tap can't place it twice. */
+function PlaceButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return <button disabled={pending} aria-busy={pending} className="btn btn-dark w-full disabled:opacity-60">{pending ? "Placing your order…" : label}</button>;
 }
 export default function CartView(props: Props) { return <Suspense><Inner {...props} /></Suspense>; }

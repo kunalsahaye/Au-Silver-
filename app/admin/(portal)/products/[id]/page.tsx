@@ -38,6 +38,11 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           <L t="Material"><input name="material" defaultValue={p?.material ?? "925 Sterling Silver"} className="field" /></L>
           <L t="Finish"><input name="finish" defaultValue={p?.finish} className="field" /></L>
         </div>
+        <div className="grid grid-cols-3 gap-4">
+          <L t="Weight (optional)"><input name="weight" defaultValue={p?.seo.weight} className="field" placeholder="e.g. 3.2 g" /></L>
+          <L t="Size or dimensions (optional)"><input name="size" defaultValue={p?.seo.size} className="field" placeholder="e.g. Adjustable, 18 mm" /></L>
+          <L t="Stone (optional)"><input name="stone" defaultValue={p?.seo.stone} className="field" placeholder="e.g. Cubic zirconia" /></L>
+        </div>
         <L t="Web address (optional, made from the name if blank)"><input name="slug" defaultValue={p?.slug} className="field" placeholder="e.g. twist-ring" /></L>
         <div className="flex gap-6 text-sm">
           <label className="flex items-center gap-2"><input type="checkbox" name="featured" defaultChecked={p?.featured} /> Featured</label>

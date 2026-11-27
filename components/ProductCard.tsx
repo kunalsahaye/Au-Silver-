@@ -25,7 +25,7 @@ export default function ProductCard({ p, cur, placeholder = "", soldOut = "Sold 
   const low = o.lowStock.on && !out && p.stock <= o.lowStock.threshold;
   const labels = out ? [soldOut] : o.badges.on ? [was && `Sale −${Math.round((1 - p.price / was) * 100)}%`, isNew && "New", !was && !isNew && p.bestseller && "Bestseller"].filter(Boolean) as string[] : [];
   const quick = () => {
-    cart?.add({ slug: p.slug, name: p.name, price: p.price, image: src || undefined });
+    cart?.add({ slug: p.slug, name: p.name, price: p.price, image: src || undefined, stock: p.stock });
     setAdded(true); setTimeout(() => setAdded(false), 1600);
   };
   const href = `/product/${p.slug}`;
@@ -40,7 +40,7 @@ export default function ProductCard({ p, cur, placeholder = "", soldOut = "Sold 
         </Link>
         {labels.length > 0 && (
           <span className="pointer-events-none absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
-            {labels.map((l) => <span key={l} className={`px-2 py-1 text-[9px] leading-none tracking-[0.14em] uppercase ${l.startsWith("Sale") ? "bg-ink text-ivory" : "bg-ivory/95 text-ink"}`}>{l}</span>)}
+            {labels.map((l) => <span key={l} className={`px-2 py-1 text-[10px] leading-none tracking-[0.14em] uppercase ${l.startsWith("Sale") ? "bg-ink text-ivory" : "bg-ivory/95 text-ink"}`}>{l}</span>)}
           </span>
         )}
         <span className="absolute top-2 right-2 transition md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"><WishHeart slug={p.slug} name={p.name} /></span>
@@ -56,7 +56,7 @@ export default function ProductCard({ p, cur, placeholder = "", soldOut = "Sold 
       <Link href={href} className="block">
         <h3 className="mt-3 text-[13px] leading-snug font-medium tracking-[-0.005em]">{p.name}</h3>
         <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[12px] tabular-nums">
-          <span className={was ? "" : "opacity-55"}>{money(cur, p.price)}</span>
+          <span className={was ? "" : "opacity-70"}>{money(cur, p.price)}</span>
           {was > 0 && <s className="opacity-40">{money(cur, was)}</s>}
         </p>
         {low && <p className="mt-1 text-[11px] text-[#9a3b2f]">{o.lowStock.text.replace("{n}", String(p.stock))}</p>}

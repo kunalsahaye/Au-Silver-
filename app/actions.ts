@@ -1,8 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
-import { addReview, addSubscriber, createEnquiry, createOrder, getContent, getProducts } from "@/lib/store";
+import { addReview, addSubscriber, createEnquiry, createOrder, getContent, getOrders, getProducts } from "@/lib/store";
 import { applyCoupon, type CouponResult } from "@/lib/coupons";
-import { money, shippingFor } from "@/lib/format";
+import { indianMobile, money, orderRef, shippingFor, validEmail, validPincode } from "@/lib/format";
 import { notify } from "@/lib/mail";
 import type { OrderItem } from "@/lib/types";
 
@@ -46,18 +46,36 @@ export async function placeOrder(fd: FormData) {
   const cp = code && c.plugins.coupons.on ? applyCoupon(c.coupons, code, subtotal, site.currency) : null;
   const discount = cp?.ok ? cp.discount : 0;
   const shipping = cp?.ok && cp.freeShipping ? 0 : shippingFor(subtotal, site);
+  // Contact and delivery details, checked here as well as in the browser.
+  const line = clean(fd.get("address"), 300), city = clean(fd.get("city"), 80), state = clean(fd.get("state"), 60), pin = clean(fd.get("pincode"), 10);
+  const phone = indianMobile(clean(fd.get("phone"), 40));
   const o = {
-    name: clean(fd.get("name"), 100), email: clean(fd.get("email"), 150),
-    phone: clean(fd.get("phone"), 40), address: clean(fd.get("address"), 500), items,
+    name: clean(fd.get("name"), 100), email: clean(fd.get("email"), 150).toLowerCase(),
+    phone: phone ? `+91 ${phone}` : "", address: [line, [city, state].filter(Boolean).join(", "), pin].filter(Boolean).join("\n"), items,
     total: subtotal - discount + shipping, coupon: cp?.ok ? cp.code : null, discount,
   };
-  if (!o.name || !o.email || !o.address || !items.length) redirect("/cart?error=1");
+  if (!items.length) redirect("/cart");
+  const bad = !o.name ? "name" : !validEmail(o.email) ? "email" : !phone ? "phone" : !line || !city || !state ? "address" : !validPincode(pin) ? "pincode" : "";
+  if (bad) redirect(`/cart?error=${bad}`);
+  // A double tap or a resubmitted page must not create a second order.
+  const key = (x: { email: string; total: number; items: { slug: string; qty: number }[] }) => `${x.email}|${x.total}|${x.items.map((i) => `${i.slug}x${i.qty}`).sort().join(",")}`;
+  const dup = (await getOrders()).slice(0, 30).find((x) => Date.now() - new Date(x.created_at).getTime() < 3 * 60_000 && key({ ...x, total: Number(x.total) }) === key(o));
+  if (dup) redirect(`/cart?placed=${orderRef(dup.id)}`);
   const res = await createOrder(o);
   if (!res.ok) redirect(`/cart?soldout=${encodeURIComponent(res.soldOut)}`);
+  const ref = orderRef(res.id);
   const cur = site.currency;
-  await notify(`New order from ${o.name}`,
+  await notify(`New order ${ref} from ${o.name}`,
     `<p><b>${esc(o.name)}</b> (${esc(o.email)}, ${esc(o.phone)})</p><p>${esc(o.address)}</p><ul>${items.map((i) => `<li>${esc(i.name)} × ${i.qty} at ${esc(money(cur, i.price))}</li>`).join("")}</ul>${o.coupon ? `<p>Code ${esc(o.coupon)}: −${esc(money(cur, discount))}</p>` : ""}<p>Shipping: ${shipping ? esc(money(cur, shipping)) : "Free"}</p><p>Total: ${esc(money(cur, o.total))}</p>`);
-  redirect("/cart?placed=1");
+  redirect(`/cart?placed=${ref}`);
+}
+
+/** Today's names, prices and stock for the pieces in a saved bag, so the bag never shows an old price. */
+export async function bagInfo(slugs: string[]): Promise<Record<string, { name: string; price: number; stock: number }>> {
+  const want = new Set((Array.isArray(slugs) ? slugs : []).slice(0, 50).map(String));
+  const out: Record<string, { name: string; price: number; stock: number }> = {};
+  for (const p of await getProducts()) if (want.has(p.slug)) out[p.slug] = { name: p.name, price: Number(p.price), stock: p.stock };
+  return out;
 }
 
 /** Used by the bag to show what a discount code takes off. The order itself is checked again on the server. */

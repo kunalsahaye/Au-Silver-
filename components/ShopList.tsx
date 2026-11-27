@@ -92,18 +92,18 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
         <form action={path} className="hidden items-center gap-6 py-3 text-[11px] tracking-[0.08em] uppercase md:flex">
           <SubmitOnChange />
           {q.q && <input type="hidden" name="q" value={q.q} />}
-          <span className="opacity-50">Filter</span>
+          <span className="opacity-70">Filter</span>
           <label className="flex items-center gap-2"><span className="sr-only">Metal</span>
             <select name="metal" defaultValue={q.metal ?? ""} className={sel}>{METALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <span className="flex items-center gap-1.5">
-            <span className="opacity-50">{s.currency}</span><input name="min" type="number" min="0" inputMode="numeric" defaultValue={q.min} placeholder="Min" aria-label="Min price" className={num} />
+            <span className="opacity-70">{s.currency}</span><input name="min" type="number" min="0" inputMode="numeric" defaultValue={q.min} placeholder="Min" aria-label="Min price" className={num} />
             <span className="opacity-40">–</span>
             <input name="max" type="number" min="0" inputMode="numeric" defaultValue={q.max} placeholder="Max" aria-label="Max price" className={num} />
             <button className="ml-1 underline underline-offset-4">Go</button>
           </span>
           <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" name="stock" value="in" defaultChecked={q.stock === "in"} className="h-4 w-4 accent-[var(--ink)]" />{w.inStockOnly}</label>
-          <span className="ml-auto opacity-50">{list.length} {w.pieces}</span>
-          <label className="flex items-center gap-2"><span className="opacity-50">Sort</span>
+          <span className="ml-auto opacity-70">{list.length} {w.pieces}</span>
+          <label className="flex items-center gap-2"><span className="opacity-70">Sort</span>
             <select name="sort" defaultValue={q.sort ?? ""} className={sel}>{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         </form>
         <details className="group md:hidden">
@@ -137,6 +137,7 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
         </div>
       )}
 
+      <h2 className="sr-only">{cat?.name ?? w.shopAllTitle}: {list.length} {w.pieces}</h2>
       <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
         {shown.map((p, i) => <ProductCard key={p.id} eager={i < 4} p={p} cur={s.currency} placeholder={s.productPlaceholder} soldOut={w.soldOut} />)}
       </div>

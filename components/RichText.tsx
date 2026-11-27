@@ -18,7 +18,7 @@ export default function RichText({ text, faq = false }: { text: string; faq?: bo
           <div className="space-y-14">
             {groups.map((g, gi) => (
               <section key={gi} id={g.topic ? id(g.topic) : undefined} className="scroll-mt-28">
-                {g.topic && <h2 className="mb-4 text-[11px] tracking-[0.22em] uppercase opacity-50">{g.topic}</h2>}
+                {g.topic && <h2 className="mb-4 text-[11px] tracking-[0.22em] uppercase opacity-70">{g.topic}</h2>}
                 <div className="divide-y divide-ink/10 border-y border-ink/10">
                   {g.items.map((it, i) => (
                     <details key={i} className="group" open={gi === 0 && i === 0}>

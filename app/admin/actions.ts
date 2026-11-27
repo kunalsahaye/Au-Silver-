@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { checkLogin, endSession, getRole, startSession } from "@/lib/auth";
 import { deleteProduct, getDraft, saveProduct, setEnquiryStatus, setOrderStatus } from "@/lib/store";
@@ -12,9 +13,21 @@ const ORDER = ["new", "confirmed", "shipped", "delivered", "cancelled"] as const
 const ENQ = ["new", "contacted", "closed"] as const;
 async function guard() { if (!(await getRole())) redirect("/admin/login"); }
 
+// Slows down password guessing: 5 wrong tries from one address lock it out for 15 minutes (per server instance).
+const tries = new Map<string, { n: number; first: number; until: number }>();
 export async function login(fd: FormData) {
+  const ip = ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
+  const t = tries.get(ip);
+  if (t && t.until > Date.now()) redirect("/admin/login?error=locked");
   const role = checkLogin(s(fd, "email"), String(fd.get("password") ?? ""));
-  if (!role) redirect("/admin/login?error=1");
+  if (!role) {
+    const fresh = !t || Date.now() - t.first > 15 * 60_000;
+    const n = (fresh ? 0 : t.n) + 1;
+    tries.set(ip, { n, first: fresh ? Date.now() : t.first, until: n >= 5 ? Date.now() + 15 * 60_000 : 0 });
+    await new Promise((r) => setTimeout(r, 600));
+    redirect("/admin/login?error=1");
+  }
+  tries.delete(ip);
   await startSession(role);
   redirect("/admin");
 }
@@ -35,6 +48,7 @@ export async function upsertProduct(fd: FormData) {
     seo: {
       title: s(fd, "seoTitle").slice(0, 70), description: s(fd, "seoDescription").slice(0, 170),
       alt: s(fd, "alt").slice(0, 150), sku: s(fd, "sku").slice(0, 40),
+      weight: s(fd, "weight").slice(0, 40), size: s(fd, "size").slice(0, 80), stone: s(fd, "stone").slice(0, 80),
       ...(Number(s(fd, "compareAt")) > Number(s(fd, "price")) ? { compareAt: Math.round(Number(s(fd, "compareAt"))) } : {}),
     },
     featured: fd.get("featured") === "on", bestseller: fd.get("bestseller") === "on",
