@@ -31,6 +31,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
               </form>
             </div>
             <ul className="mt-3 text-sm opacity-80">{o.items.map((i) => <li key={i.slug}>{i.name} × {i.qty} <span className="opacity-60">at {money(s.currency, Number(i.price))}</span></li>)}</ul>
+            {o.coupon && <p className="mt-1 text-sm text-burgundy">Code {o.coupon}: −{money(s.currency, Number(o.discount) || 0)}</p>}
             <p className="mt-2 whitespace-pre-line text-sm opacity-60">{o.address}</p>
           </div>
         ))}

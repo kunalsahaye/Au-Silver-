@@ -10,6 +10,9 @@ import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
 import { baseUrl, breadcrumbLd, meta, productDescription, productLd, productTitle } from "@/lib/seo";
 import { words } from "@/lib/words";
+import Reels from "@/components/Reels";
+import RecentlyViewed from "@/components/plugins/RecentlyViewed";
+import StickyBuy from "@/components/plugins/StickyBuy";
 
 type P = { params: Promise<{ slug: string }> };
 
@@ -32,6 +35,11 @@ export default async function ProductPage({ params }: P) {
   const photos = [p.image_url ?? "", ...p.images].filter(Boolean);
   const alt = p.seo.alt || `${p.name}, ${p.material || "silver"} ${catName.toLowerCase()}`;
   const related = all.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 4);
+  const pl = c.plugins;
+  // Upsell: pieces from other categories that go with this one, bestsellers first.
+  const pairs = pl.upsell.on ? all.filter((x) => x.category !== p.category && x.stock > 0).sort((a, b) => Number(b.bestseller) - Number(a.bestseller) || Number(b.featured) - Number(a.featured)).slice(0, 4) : [];
+  const minis = all.map((x) => ({ slug: x.slug, name: x.name, price: money(s.currency, x.price), image: x.image_url || x.images[0] || s.productPlaceholder }));
+  const reels = c.reels.filter((r) => r.where !== "home");
   const rows = [["Material", p.material], ["Finish", p.finish], ["Metal tone", p.metal], ["Category", catName], ["Availability", p.stock > 0 ? "In stock" : w.soldOut]];
   const crumbs: [string, string][] = [["Home", "/"], [w.shopAllTitle, "/shop"], ...(parent ? [[parent.name, `/shop/${parent.slug}`] as [string, string]] : []), [catName, `/shop/${p.category}`], [p.name, `/product/${p.slug}`]];
   return (
@@ -63,12 +71,21 @@ export default async function ProductPage({ params }: P) {
           </div>
         </div>
       </div>
+      {pairs.length > 0 && (
+        <div className="mt-24">
+          <h2 className="mb-8 text-3xl tracking-[-0.03em]">{pl.upsell.productTitle}</h2>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">{pairs.map((r) => <ProductCard key={r.id} p={r} cur={s.currency} placeholder={s.productPlaceholder} soldOut={w.soldOut} />)}</div>
+        </div>
+      )}
       {related.length > 0 && (
         <div className="mt-24">
           <h2 className="serif mb-8 text-3xl italic">{w.relatedTitle}</h2>
           <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">{related.map((r) => <ProductCard key={r.id} p={r} cur={s.currency} placeholder={s.productPlaceholder} soldOut={w.soldOut} />)}</div>
         </div>
       )}
+      {reels.length > 0 && <div className="-mx-5 mt-12"><Reels reels={reels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /></div>}
+      {pl.recent.on && <div className="-mx-5"><RecentlyViewed current={p.slug} all={minis} title={pl.recent.title} /></div>}
+      {pl.stickyBuy.on && <StickyBuy slug={p.slug} name={p.name} price={p.price} priceText={money(s.currency, p.price)} soldOut={p.stock <= 0} labels={[w.addToBag, w.addedToBag, w.soldOut]} />}
     </div>
   );
 }

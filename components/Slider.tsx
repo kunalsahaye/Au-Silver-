@@ -15,7 +15,7 @@ export default function Slider({ slides }: { slides: Slide[] }) {
   }, [n, i]);
   const go = (d: number) => setI((v) => (v + d + n) % n);
   return (
-    <section className="relative h-[560px] overflow-hidden bg-[#2a170d] md:h-[720px]"
+    <section className="relative h-[560px] overflow-hidden bg-wine md:h-[720px]"
       onTouchStart={(e) => setX0(e.touches[0].clientX)}
       onTouchEnd={(e) => { if (x0 !== null) { const d = e.changedTouches[0].clientX - x0; if (Math.abs(d) > 40) go(d < 0 ? 1 : -1); } setX0(null); }}>
       {slides.map((s, k) => (

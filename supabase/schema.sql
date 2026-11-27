@@ -34,6 +34,14 @@ create table if not exists orders (
   items jsonb, total numeric, status text default 'new',
   created_at timestamptz default now()
 );
+-- Added later: discount codes on orders.
+alter table orders add column if not exists coupon text;
+alter table orders add column if not exists discount numeric not null default 0;
+-- Email sign-ups from the popup and the footer form.
+create table if not exists subscribers (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null, source text default '', created_at timestamptz default now()
+);
 create table if not exists page_views (
   id bigserial primary key, path text, created_at timestamptz default now()
 );
@@ -43,6 +51,7 @@ alter table settings enable row level security;
 alter table enquiries enable row level security;
 alter table orders enable row level security;
 alter table page_views enable row level security;
+alter table subscribers enable row level security;
 
 -- Checkout: save an order and take its items out of stock in one transaction.
 -- Fails with OUT_OF_STOCK:<item name> (and saves nothing) if any item has too little stock.
@@ -56,9 +65,10 @@ begin
     get diagnostics n = row_count;
     if n = 0 then raise exception 'OUT_OF_STOCK:%', it->>'name'; end if;
   end loop;
-  insert into orders (name, email, phone, address, items, total, status)
+  insert into orders (name, email, phone, address, items, total, coupon, discount, status)
   values (p_order->>'name', p_order->>'email', p_order->>'phone', p_order->>'address',
-          p_order->'items', (p_order->>'total')::numeric, 'new')
+          p_order->'items', (p_order->>'total')::numeric, nullif(p_order->>'coupon', ''),
+          coalesce((p_order->>'discount')::numeric, 0), 'new')
   returning id into new_id;
   return new_id;
 end $$;

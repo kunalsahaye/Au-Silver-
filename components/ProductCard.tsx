@@ -8,7 +8,7 @@ export default function ProductCard({ p, cur, placeholder = "", soldOut = "Sold 
   const src = p.image_url || placeholder;
   return (
     <Link href={`/product/${p.slug}`} className="group block">
-      <div className="relative aspect-square overflow-hidden bg-[#f4f2ee]">
+      <div className="relative aspect-square overflow-hidden bg-cream">
         {src
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={src} alt={p.seo.alt || p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />

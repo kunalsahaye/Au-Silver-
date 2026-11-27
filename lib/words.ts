@@ -32,6 +32,17 @@ export const WORDS = {
   footerShop: ["Shop", "Footer: first column heading"],
   footerHelp: ["Help", "Footer: second column heading"],
   footerContact: ["Get in touch", "Footer: third column heading"],
+  reelsEyebrow: ["Watch", "Homepage: small text above reels"],
+  reelsTitle: ["Seen on Instagram", "Homepage: reels heading"],
+  reviewsEyebrow: ["Reviews", "Homepage: small text above reviews"],
+  reviewsTitle: ["What our customers say", "Homepage: reviews heading"],
+  newArrivalsTitle: ["New arrivals", "Homepage: new arrivals heading"],
+  discountCode: ["Discount code", "Bag: discount code box"],
+  apply: ["Apply", "Bag: apply code button"],
+  freeShipLeft: ["You're {amount} away from free shipping", "Bag: free shipping bar ({amount} is replaced)"],
+  freeShipDone: ["You've unlocked free shipping!", "Bag: free shipping reached"],
+  subscribeButton: ["Subscribe", "Email sign-up: button"],
+  emailPlaceholder: ["Your email", "Email sign-up: box"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type WordKey = keyof typeof WORDS;

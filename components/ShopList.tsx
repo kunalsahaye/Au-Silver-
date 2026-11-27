@@ -75,7 +75,7 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
         </div>
       )}
 
-      <form action={path} className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-[#f4f2ee] p-4 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-end">
+      <form action={path} className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-cream p-4 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-end">
         <label className="col-span-2 text-xs md:col-span-1"><span className="mb-1 block opacity-60">Search</span><input name="q" type="search" defaultValue={q.q} placeholder={w.searchPlaceholder} className="field" /></label>
         <label className="text-xs"><span className="mb-1 block opacity-60">Metal</span>
           <select name="metal" defaultValue={q.metal ?? ""} className="field"><option value="">Any</option><option value="silver">Silver</option><option value="gold">Gold tone</option><option value="rose">Rose tone</option></select></label>
