@@ -1,4 +1,4 @@
-import type { CategoryItem, Content, Customer, PageItem, Plugins, Product, Section, SiteSettings, Slide, Theme } from "./types";
+import type { CategoryItem, Content, Customer, HomeBlocks, PageItem, Plugins, Product, Section, SiteSettings, Slide, Theme } from "./types";
 
 export const defaultSettings: SiteSettings = {
   brand: "Au Silver",
@@ -71,20 +71,49 @@ export const seedProducts: Product[] = [
 ];
 
 /* ---------- default editable content (used until the owner edits it) ---------- */
-export const defaultSections: Section[] = [
-  { key: "slides", on: true }, { key: "bestsellers", on: true }, { key: "categories", on: true },
-  { key: "story", on: true }, { key: "more", on: true }, { key: "customers", on: true }, { key: "process", on: true },
-  { key: "reels", on: true }, { key: "reviews", on: true }, { key: "newArrivals", on: false },
-];
+export const defaultSections: Section[] = (
+  [["slides", true], ["bestsellers", true], ["badges", true], ["categories", true], ["occasions", true], ["newArrivals", true],
+   ["story", true], ["reels", true], ["gifts", true], ["more", true], ["reviews", true], ["customers", true], ["promo", false],
+   ["collection", false], ["process", true], ["faq", true], ["newsletter", false], ["visit", false]] as const
+).map(([key, on]) => ({ key, on }));
 export const sectionNames: Record<Section["key"], string> = {
   slides: "Slides at the top", bestsellers: "Bestsellers row", categories: "Shop by category",
   story: "Our story (dark section with photos)", more: "Second product row", customers: "Happy customers",
   process: "Our process (photo and About text)", reels: "Reels (vertical videos, e.g. from Instagram)",
   reviews: "Customer reviews (written testimonials)", newArrivals: "New arrivals row",
+  occasions: "Shop by occasion (picture tiles)", gifts: "Gift guide (gifts by price)", badges: "Why choose us (trust badges)",
+  promo: "Offer banner (big photo, headline, button)", collection: "Featured collection (one category's pieces)",
+  faq: "Questions and answers (from your FAQ page)", newsletter: "Email sign-up band", visit: "Visit us (address and map)",
 };
 export const defaultTheme: Theme = {
   background: "#ffffff", text: "#24140b", soft: "#f4f2ee", soft2: "#eeeae5", dark: "#2a170d", accent: "#24140b", gold: "#b9894f", bar: "#24140b",
   headingFont: "Inter", bodyFont: "Inter", headingWeight: "bold", corners: "square",
+};
+const tile = (id: string, title: string, text: string, href: string) => ({ id, title, text, image: "", href });
+export const defaultHome: HomeBlocks = {
+  occasionsTitle: "Shop by occasion",
+  occasions: [
+    tile("everyday", "Everyday", "Light pieces you never take off", "/shop?sort=new"),
+    tile("festive", "Festive and weddings", "Statement silver for big days", "/shop/necklaces"),
+    tile("office", "Work wear", "Quiet shine for the office", "/shop/earrings"),
+    tile("gifting", "Gifting", "Boxed and ready to give", "/shop?max=1999"),
+  ],
+  giftsTitle: "Gift guide",
+  gifts: [
+    tile("u999", "Under ₹999", "", "/shop?max=999"), tile("u1999", "Under ₹1,999", "", "/shop?max=1999"),
+    tile("u2999", "Under ₹2,999", "", "/shop?max=2999"), tile("luxe", "Luxe gifts", "₹3,000 and above", "/shop?min=3000"),
+  ],
+  badgesTitle: "Why Au Silver",
+  badges: [
+    { id: "925", icon: "925", title: "Certified 925 silver", text: "Every piece is solid sterling silver." },
+    { id: "skin", icon: "✿", title: "Skin-friendly", text: "Made for everyday wear on sensitive skin." },
+    { id: "ship", icon: "⇢", title: "Free shipping over ₹1,999", text: "Delivered across India in 3 to 7 days." },
+    { id: "returns", icon: "↺", title: "Easy returns", text: "Not right? Send it back within 7 days." },
+  ],
+  promo: { image: "", eyebrow: "Limited time", title: "The festive edit", text: "Our new pieces for the season, in solid 925 silver.", cta: "Shop the edit", href: "/shop?sort=new" },
+  collection: { category: "rings", title: "" },
+  faqTitle: "Questions, answered", newsletterTitle: "Be first to see new pieces", newsletterText: "Offers and silver care tips, a few times a month.",
+  visitTitle: "Visit us", visitText: "", showMap: true,
 };
 export const defaultPlugins: Plugins = {
   popup: { on: false, title: "Get 10% off your first order", text: "Join our list for new pieces and silver care tips.", image: "", coupon: "WELCOME10", button: "Shop now", href: "/shop", email: true, delay: 8, exit: true, days: 7 },
@@ -118,5 +147,5 @@ export const defaultPages = (aboutBody: string): PageItem[] => [
 export const defaultContent = (site: SiteSettings = defaultSettings): Content => ({
   site, sections: defaultSections, slides: defaultSlides, customers: defaultCustomers,
   categories: defaultCategories, pages: defaultPages(site.aboutBody), words: {},
-  theme: defaultTheme, reels: [], reviews: [], coupons: [], plugins: defaultPlugins,
+  theme: defaultTheme, reels: [], home: defaultHome, reviews: [], coupons: [], plugins: defaultPlugins,
 });

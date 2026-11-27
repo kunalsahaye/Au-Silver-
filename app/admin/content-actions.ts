@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { draftMode } from "next/headers";
 import { getRole } from "@/lib/auth";
 import { discardDraft, getDraft, publishDraft, saveDraft } from "@/lib/store";
-import type { CategoryItem, Content, Coupon, Customer, PageItem, Plugins, Reel, Review, Section, SiteSettings, Slide, Theme } from "@/lib/types";
-import { defaultPlugins, defaultSections, defaultTheme } from "@/lib/seed";
+import type { Badge, CategoryItem, Content, Coupon, Tile, Customer, PageItem, Plugins, Reel, Review, Section, SiteSettings, Slide, Theme } from "@/lib/types";
+import { defaultHome, defaultPlugins, defaultSections, defaultTheme } from "@/lib/seed";
 import { FONTS } from "@/lib/theme";
 import { WORDS } from "@/lib/words";
 
@@ -122,6 +122,24 @@ export async function saveSeo(fd: FormData) {
     for (const k of ["googleVerification", "bingVerification"] as const) {
       const m = /content=["']([^"']+)["']/.exec(c.site[k]); if (m) c.site[k] = m[1];
     }
+  });
+}
+
+export async function saveBlocks(fd: FormData) {
+  await update("/admin/homepage/blocks", (c) => {
+    const arr = (k: string) => { try { const v = JSON.parse(String(fd.get(k) ?? "[]")); return Array.isArray(v) ? v.slice(0, 24) : []; } catch { return []; } };
+    const t = (k: string, max = 300) => str(fd.get(k), max);
+    const tilesOf = (k: string) => arr(k).map((x: Record<string, unknown>): Tile => ({ id: str(x.id, 20) || newId(), title: str(x.title, 80), text: str(x.text, 160), image: str(x.image, 1000), href: str(x.href, 300) })).filter((x: Tile) => x.title || x.image);
+    const h = { ...defaultHome, ...c.home };
+    h.occasionsTitle = t("occasionsTitle", 80); h.occasions = tilesOf("occasions");
+    h.giftsTitle = t("giftsTitle", 80); h.gifts = tilesOf("gifts");
+    h.badgesTitle = t("badgesTitle", 80);
+    h.badges = arr("badges").map((x: Record<string, unknown>): Badge => ({ id: str(x.id, 20) || newId(), icon: str(x.icon, 6), title: str(x.title, 60), text: str(x.text, 160) })).filter((x: Badge) => x.title);
+    h.promo = { image: t("promo.image", 1000), eyebrow: t("promo.eyebrow", 60), title: t("promo.title", 120), text: t("promo.text", 300), cta: t("promo.cta", 40), href: t("promo.href", 300) };
+    h.collection = { category: t("collection.category", 60), title: t("collection.title", 80) };
+    h.faqTitle = t("faqTitle", 80); h.newsletterTitle = t("newsletterTitle", 120); h.newsletterText = t("newsletterText", 300);
+    h.visitTitle = t("visitTitle", 80); h.visitText = t("visitText", 400); h.showMap = fd.get("showMap") === "on";
+    c.home = h;
   });
 }
 

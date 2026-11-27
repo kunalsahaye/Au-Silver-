@@ -5,7 +5,7 @@ A jewellery storefront with a built-in admin dashboard that works as the site's 
 - **Shop**: homepage (slides, bestsellers, categories, story, happy customers), collections, product pages with photo galleries, bag and checkout with shipping charges (orders are confirmed and paid offline for now), contact form, and any extra pages you add (FAQ, Care guide …).
 - **Admin home** (`/admin`): big tap-friendly tiles (made for iPad), then visits, revenue, latest orders, low stock, enquiries.
 - **Products**: add, edit, search, filter, several photos each, price, stock, category, featured or bestseller. Changes go live straight away.
-- **Homepage**: turn sections on or off and reorder them; edit headlines and photos.
+- **Homepage**: 18 sections to turn on or off and reorder (slides, bestsellers, trust badges, categories, shop by occasion, new arrivals, story, reels, gift guide, featured row, reviews, happy customers, offer banner, featured collection, process, FAQ, email sign-up, visit us with map); edit headlines, photos and links in **More sections**.
 - **Slides**: photos or videos at the top of the homepage, each with a headline and button.
 - **Happy customers**: customer photo or video, name, note and stars.
 - **Categories**: add, rename, reorder, set a photo and description, make sub-categories (e.g. Rings › Stacking rings), choose which appear in the menu. Each has its own page at `/shop/<name>` with search, metal and price filters, sorting and pages.

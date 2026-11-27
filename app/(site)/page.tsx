@@ -5,6 +5,8 @@ import ProductCard from "@/components/ProductCard";
 import ProductArt from "@/components/ProductArt";
 import Slider from "@/components/Slider";
 import Reels from "@/components/Reels";
+import SignupForm from "@/components/plugins/SignupForm";
+import type { Tile } from "@/lib/types";
 import { getProducts } from "@/lib/store";
 import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
@@ -38,6 +40,31 @@ export default async function Home() {
   const first = picks.slice(0, 7);
   const second = [...all.filter((p) => p.featured), ...all.filter((p) => !p.featured)].slice(0, 7);
   const fresh = [...all].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
+  const h = c.home;
+  const homeReels = c.reels.filter((r) => r.where !== "product");
+  // While previewing, empty sections show where to add their content instead of vanishing.
+  const hint = (title: string, where: string, href: string) => c.preview ? (
+    <section className="mx-auto max-w-[1280px] px-6 py-10"><Link href={href} className="block rounded-box border-2 border-dashed border-ink/20 p-8 text-center text-sm opacity-70"><b>{title}</b> is switched on but empty. Add some in Admin › {where} →</Link></section>
+  ) : null;
+  const tiles = (list: Tile[], wide = false) => (
+    <div className={`grid grid-cols-2 gap-3 ${wide ? "md:grid-cols-4" : "md:grid-cols-4"}`}>
+      {list.map((t) => (
+        <Link key={t.id} href={t.href || "/shop"} className="group relative block aspect-[4/5] overflow-hidden rounded-box bg-cream">
+          {t.image ? <Photo src={t.image} alt={t.title} className="h-full w-full transition duration-500 group-hover:scale-105" />
+            : <div className="grid h-full w-full place-items-center bg-gradient-to-br from-cream to-blush p-6 text-center text-4xl opacity-60 transition duration-500 group-hover:scale-105">✦</div>}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 text-white">
+            <h3 className="text-lg leading-tight">{t.title}</h3>{t.text && <p className="mt-1 text-[11px] opacity-85">{t.text}</p>}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+  const coll = c.categories.find((x) => x.slug === h.collection.category);
+  const collItems = coll ? all.filter((p) => p.category === coll.slug || c.categories.some((x) => x.slug === p.category && x.parent === coll.slug)).slice(0, 8) : [];
+  const faqPage = c.pages.find((p) => p.slug === "faq");
+  const faqs = (faqPage?.body ?? "").split(/^## /m).slice(1).map((b) => { const [q, ...a] = b.split("\n"); return { q: q.trim(), a: a.join(" ").replace(/^- /gm, "").trim() }; }).filter((x) => x.q).slice(0, 5);
+  const place = [s.address, s.city, s.region, s.postalCode].filter((x) => x && !/^Add your/i.test(x)).join(", ");
+  const mapQ = s.latitude && s.longitude ? `${s.latitude},${s.longitude}` : place;
   const count = (slug: string) => all.filter((p) => p.category === slug).length;
 
   const sections: Record<SectionKey, React.ReactNode> = {
@@ -112,7 +139,7 @@ export default async function Home() {
       </section>
     ),
 
-    customers: c.customers.length > 0 && (
+    customers: !c.customers.length ? hint("Happy customers", "Happy customers", "/admin/homepage/customers") : (
       <section className="bg-cream py-20">
         <div className="mx-auto max-w-[1280px] px-6">
           <p className="mb-2 text-[10px]">{w.customersEyebrow}</p>
@@ -144,9 +171,9 @@ export default async function Home() {
       </section>
     ),
 
-    reels: <Reels reels={c.reels.filter((r) => r.where !== "product")} title={w.reelsTitle} eyebrow={w.reelsEyebrow} />,
+    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : hint("Reels", "Reels", "/admin/reels"),
 
-    reviews: c.reviews.length > 0 && (
+    reviews: !c.reviews.length ? hint("Customer reviews", "Customer reviews", "/admin/reviews") : (
       <section className="mx-auto max-w-[1280px] px-6 py-16">
         <p className="mb-2 text-[10px]">{w.reviewsEyebrow}</p>
         <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2>
@@ -169,6 +196,101 @@ export default async function Home() {
         <Scroller>{fresh.map((p) => <div key={p.id} className="w-[210px] shrink-0 md:w-[260px]"><ProductCard p={p} cur={s.currency} placeholder={ph} soldOut={w.soldOut} /></div>)}</Scroller>
       </section>
     ),
+
+    occasions: h.occasions.length > 0 && (
+      <section className="mx-auto max-w-[1280px] px-6 py-16">
+        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{h.occasionsTitle}</h2>
+        {tiles(h.occasions)}
+      </section>
+    ),
+
+    gifts: h.gifts.length > 0 && (
+      <section className="bg-cream py-16">
+        <div className="mx-auto max-w-[1280px] px-6">
+          <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{h.giftsTitle}</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {h.gifts.map((t) => (
+              <Link key={t.id} href={t.href || "/shop"} className="group flex items-center gap-4 rounded-box bg-ivory p-4 transition hover:shadow-md">
+                {t.image ? <Photo src={t.image} alt={t.title} className="h-16 w-16 shrink-0 rounded-box" /> : <span className="grid h-16 w-16 shrink-0 place-items-center rounded-box bg-blush text-2xl">🎁</span>}
+                <span><span className="block text-base font-semibold leading-tight">{t.title}</span>{t.text && <span className="block text-[11px] opacity-60">{t.text}</span>}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
+
+    badges: h.badges.length > 0 && (
+      <section className="border-y border-black/5 py-12">
+        <div className="mx-auto max-w-[1280px] px-6">
+          {h.badgesTitle && <h2 className="mb-8 text-center text-3xl tracking-[-0.04em]">{h.badgesTitle}</h2>}
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            {h.badges.map((b) => (
+              <div key={b.id} className="text-center">
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-cream text-lg font-semibold text-gold">{b.icon}</span>
+                <h3 className="mt-3 text-sm font-semibold">{b.title}</h3>{b.text && <p className="mt-1 text-[11px] leading-snug opacity-65">{b.text}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
+
+    promo: (
+      <section className="relative overflow-hidden bg-wine text-white">
+        {h.promo.image && <Media src={h.promo.image} alt={h.promo.title} className="absolute inset-0 h-full w-full opacity-70" />}
+        <div className="relative mx-auto max-w-[1280px] px-6 py-24 md:py-32">
+          {h.promo.eyebrow && <p className="text-[10px] tracking-[0.2em] uppercase opacity-80">{h.promo.eyebrow}</p>}
+          <h2 className="mt-3 max-w-xl text-5xl leading-[0.98] tracking-[-0.045em] md:text-7xl">{h.promo.title}</h2>
+          {h.promo.text && <p className="mt-4 max-w-md text-sm opacity-85">{h.promo.text}</p>}
+          {h.promo.cta && <Link href={h.promo.href || "/shop"} className="btn btn-light mt-8">{h.promo.cta}</Link>}
+        </div>
+      </section>
+    ),
+
+    collection: coll && collItems.length > 0 && (
+      <section className="mx-auto max-w-[1280px] px-6 py-16">
+        <div className="mb-8 flex items-end justify-between"><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{h.collection.title || coll.name}</h2><Link href={`/shop/${coll.slug}`} className="text-[11px] underline">{w.shopNow} →</Link></div>
+        <Scroller>{collItems.map((p) => <div key={p.id} className="w-[210px] shrink-0 md:w-[260px]"><ProductCard p={p} cur={s.currency} placeholder={ph} soldOut={w.soldOut} /></div>)}</Scroller>
+      </section>
+    ),
+
+    faq: faqs.length > 0 && (
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <h2 className="mb-6 text-4xl tracking-[-0.045em]">{h.faqTitle}</h2>
+        <div className="divide-y divide-black/10 border-y border-black/10">
+          {faqs.map((f) => (
+            <details key={f.q} className="group py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{f.q}<span className="text-xl transition group-open:rotate-45">+</span></summary>
+              <p className="mt-2 text-sm leading-relaxed opacity-75">{f.a}</p>
+            </details>
+          ))}
+        </div>
+        <Link href="/faq" className="mt-4 inline-block text-[11px] underline">{faqPage?.title ?? "FAQ"} →</Link>
+      </section>
+    ),
+
+    newsletter: (
+      <section className="bg-blush py-16">
+        <div className="mx-auto flex max-w-[1280px] flex-col items-center px-6 text-center">
+          <h2 className="text-4xl tracking-[-0.045em]">{h.newsletterTitle}</h2>
+          {h.newsletterText && <p className="mt-2 mb-6 text-sm opacity-70">{h.newsletterText}</p>}
+          <SignupForm source="homepage" button={w.subscribeButton} placeholder={w.emailPlaceholder} />
+        </div>
+      </section>
+    ),
+
+    visit: (place || mapQ) ? (
+      <section className="grid md:grid-cols-2">
+        <div className="flex flex-col justify-center bg-cream p-8 md:p-14">
+          <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{h.visitTitle}</h2>
+          {h.visitText && <p className="mt-4 max-w-sm text-sm opacity-75">{h.visitText}</p>}
+          <address className="mt-6 space-y-1 text-sm not-italic">{place && <p>{place}</p>}{s.openingHours && <p className="opacity-70">{s.openingHours}</p>}{s.phone && <p><a href={`tel:${s.phone.replace(/\s/g, "")}`}>{s.phone}</a></p>}</address>
+          {mapQ && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQ)}`} target="_blank" rel="noopener" className="btn btn-dark mt-6 self-start">Get directions</a>}
+        </div>
+        {h.showMap && mapQ && <iframe title={`Map: ${s.brand}`} src={`https://www.google.com/maps?q=${encodeURIComponent(mapQ)}&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="h-[360px] w-full border-0 md:h-full md:min-h-[420px]" />}
+      </section>
+    ) : hint("Visit us", "Google and SEO (shop address)", "/admin/seo"),
   };
 
   return (
