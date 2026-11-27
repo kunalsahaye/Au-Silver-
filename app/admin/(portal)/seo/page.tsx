@@ -40,6 +40,8 @@ export default async function Seo({ searchParams }: Q) {
         <ImageField name="shareImage" label="Share picture (1200 × 630 works best)" defaultValue={s.shareImage} hint="Shown when someone shares your shop on WhatsApp, Facebook or X." />
       </Box>
       <Box title="Local business (Google Maps and “near me” searches)">
+        <Text name="mapsLink" label="Google Maps link" value={s.mapsLink} hint="Your shop's Google listing. In Google Maps tap Share and paste the link. Used for Directions and “Read all reviews on Google”." />
+        <Text name="mapEmbed" label="Map on the homepage (optional)" value={s.mapEmbed} area={2} hint="For an exact pin: in Google Maps on a computer open your shop, Share › Embed a map › Copy HTML, and paste it here. Without it the map uses the address below." />
         <Text name="address" label="Street address" value={s.address} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Text name="city" label="City" value={s.city} />

@@ -7,6 +7,7 @@ import { discardDraft, getDraft, publishDraft, saveDraft } from "@/lib/store";
 import type { Badge, CategoryItem, Content, Coupon, Tile, Customer, PageItem, Plugins, Reel, Review, Section, SiteSettings, Slide, Theme } from "@/lib/types";
 import { defaultHome, defaultPlugins, defaultSections, defaultTheme } from "@/lib/seed";
 import { FONTS } from "@/lib/theme";
+import { igCode } from "@/lib/img";
 import { WORDS } from "@/lib/words";
 
 /* All edits here go into the draft. Nothing changes on the shop until Publish. */
@@ -116,6 +117,14 @@ export async function saveWords(fd: FormData) {
 export async function saveSeo(fd: FormData) {
   await update("/admin/seo", (c) => {
     pick(fd, c.site, ["seoTitle", "seoDescription", "shareImage", "googleVerification", "bingVerification", "address", "city", "region", "postalCode", "country", "latitude", "longitude", "openingHours", "priceRange"], 300);
+    const maps = str(fd.get("mapsLink"), 500);
+    c.site.mapsLink = /^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps)/.test(maps) ? maps : "";
+    // A full Google Maps link carries the pin: @lat,lng or !3dlat!4dlng.
+    const pin = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/.exec(maps) ?? /@(-?\d+\.\d+),(-?\d+\.\d+)/.exec(maps);
+    if (pin && !c.site.latitude && !c.site.longitude) { c.site.latitude = pin[1]; c.site.longitude = pin[2]; }
+    // Accept the whole "Embed a map" <iframe> code and keep only its Google Maps embed address.
+    const emb = /https:\/\/www\.google\.com\/maps\/embed\?[^"'\s<>]+/.exec(str(fd.get("mapEmbed"), 3000));
+    c.site.mapEmbed = emb ? emb[0].replace(/&amp;/g, "&") : "";
     const url = str(fd.get("siteUrl"), 200).replace(/\/+$/, "");
     c.site.siteUrl = /^https?:\/\/[^\s/]+$/.test(url) ? url : "";
     // Verification fields: accept the whole <meta> tag and keep only its content value.
@@ -166,7 +175,7 @@ export async function saveReels(fd: FormData) {
     c.reels = list(fd).map((x): Reel => ({
       id: str(x.id, 20) || newId(), media: str(x.media, 1000), poster: str(x.poster, 1000), caption: str(x.caption, 200),
       href: str(x.href, 300), where: (["home", "product", "both"].includes(String(x.where)) ? x.where : "both") as Reel["where"], instagram: str(x.instagram, 300),
-    })).filter((x) => x.media || x.poster);
+    })).filter((x) => x.media || x.poster || igCode(x.instagram));
   });
 }
 
@@ -175,6 +184,7 @@ export async function saveReviews(fd: FormData) {
     c.reviews = list(fd).map((x): Review => ({
       id: str(x.id, 20) || newId(), name: str(x.name, 80), place: str(x.place, 80), text: str(x.text, 800),
       rating: Math.min(5, Math.max(1, Math.round(Number(x.rating) || 5))), product: str(x.product, 120),
+      source: x.source === "google" ? "google" : "",
     })).filter((x) => x.text);
   });
 }

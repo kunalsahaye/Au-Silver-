@@ -38,15 +38,16 @@ export default async function Reviews({ searchParams }: Q) {
       </div>
     </section>
     <EditorForm title="Homepage testimonials" q={q} action={saveReviews}
-      intro="The quotes shown on the homepage, in this order: the first one is shown first. Use the arrows to reorder. Add your own from messages, WhatsApp or Google reviews, with the customer's permission.">
+      intro="The quotes shown on the homepage, in this order: the first one is shown first. Use the arrows to reorder. Add your own from messages or WhatsApp with the customer's permission. For a Google review, open your Google listing, copy the name, stars and words exactly, and choose “Google review”.">
       <ListEditor name="items" titleKey="name" addLabel="Add a review" empty="No reviews yet."
         items={c.reviews.map((x) => ({ ...x }))}
-        blank={{ id: "", name: "", place: "", text: "", rating: 5, product: "" }}
+        blank={{ id: "", name: "", place: "", text: "", rating: 5, product: "", source: "" }}
         fields={[
           { key: "name", label: "Name", type: "text", half: true, placeholder: "e.g. Ananya" },
           { key: "place", label: "City (optional)", type: "text", half: true, placeholder: "e.g. Pune" },
           { key: "rating", label: "Stars", type: "stars", half: true },
           { key: "product", label: "Piece they bought (optional)", type: "select", half: true, options: [["", "None"], ...products.map((p) => [p.slug, p.name] as [string, string])] },
+          { key: "source", label: "Where it's from", type: "select", half: true, options: [["", "Told to us / our shop"], ["google", "Google review (copy it exactly)"]] },
           { key: "text", label: "What they said", type: "textarea" },
         ]} />
     </EditorForm>

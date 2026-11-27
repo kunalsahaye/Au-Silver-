@@ -15,7 +15,7 @@ export const defaultSettings: SiteSettings = {
   email: "hello@au-silver.example",
   phone: "+91 00000 00000",
   address: "Add your store address in the portal",
-  instagram: "@aussilver",
+  instagram: "@ausilver.co.in",
   currency: "₹",
   shippingFee: "0",
   freeShippingOver: "",
@@ -35,6 +35,8 @@ export const defaultSettings: SiteSettings = {
   latitude: "",
   longitude: "",
   openingHours: "",
+  mapsLink: "https://maps.app.goo.gl/LsS7K1DsxbbtgDEBA",
+  mapEmbed: "",
   priceRange: "₹₹",
   whatsapp: "",
   facebook: "",
@@ -74,7 +76,7 @@ export const seedProducts: Product[] = [
 export const defaultSections: Section[] = (
   [["slides", true], ["categories", true], ["newArrivals", true], ["bestsellers", true], ["collection", false], ["story", true],
    ["reels", true], ["reviews", true], ["customers", true], ["gifts", true], ["more", true], ["promo", false], ["badges", true],
-   ["process", true], ["faq", true], ["newsletter", false], ["visit", false]] as const
+   ["process", true], ["faq", true], ["newsletter", false], ["visit", true]] as const
 ).map(([key, on]) => ({ key, on }));
 export const sectionNames: Record<Section["key"], string> = {
   slides: "Slides at the top", bestsellers: "Bestsellers row", categories: "Shop by category",

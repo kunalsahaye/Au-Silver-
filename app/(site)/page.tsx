@@ -44,7 +44,7 @@ export default async function Home() {
   const ig = s.instagram ? (/^https?:/.test(s.instagram) ? s.instagram : `https://www.instagram.com/${s.instagram.replace(/^@/, "")}`) : "";
   const igName = s.instagram && !/^https?:/.test(s.instagram) ? `@${s.instagram.replace(/^@/, "")}` : "Instagram";
   // Testimonials picked in Admin come first; until there are any, the newest approved product reviews fill in.
-  const quotes = c.reviews.length ? c.reviews : approved.filter((r) => r.text).slice(0, 9).map((r) => ({ id: r.id, name: r.name, place: r.place, rating: r.rating, text: r.text, product: r.product }));
+  const quotes = c.reviews.length ? c.reviews : approved.filter((r) => r.text).slice(0, 9).map((r) => ({ id: r.id, name: r.name, place: r.place, rating: r.rating, text: r.text, product: r.product, source: "" as const }));
   // While previewing, empty sections show where to add their content instead of vanishing.
   const hint = (title: string, where: string, href: string) => c.preview ? (
     <section className="mx-auto max-w-[1280px] px-6 py-10"><Link href={href} className="block rounded-box border-2 border-dashed border-ink/20 p-8 text-center text-sm opacity-70"><b>{title}</b> is switched on but empty. Add some in Admin › {where} →</Link></section>
@@ -56,6 +56,19 @@ export default async function Home() {
   const place = [s.address, s.city, s.region, s.postalCode].filter((x) => x && !/^Add your/i.test(x)).join(", ");
   const mapQ = s.latitude && s.longitude ? `${s.latitude},${s.longitude}` : place;
   const count = (slug: string) => all.filter((p) => p.category === slug).length;
+  const mapSrc = s.mapEmbed || (mapQ ? `https://www.google.com/maps?q=${encodeURIComponent(mapQ)}&output=embed` : "");
+  const directions = s.mapsLink || (mapQ ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQ)}` : "");
+  // Gift tiles without their own picture borrow one from a piece in that price band (a different piece each).
+  const usedGift = new Set<string>();
+  const giftPiece = (href: string) => {
+    const q = new URL(href || "/shop", "http://x").searchParams;
+    const lo = Number(q.get("min")) || 0, hi = Number(q.get("max")) || Infinity;
+    const inBand = picks.filter((p) => p.price >= lo && p.price <= hi && !usedGift.has(p.id));
+    const pool = inBand.length ? inBand : picks.filter((x) => !usedGift.has(x.id));
+    const p = pool.find((x) => x.image_url) ?? pool[0];
+    if (p) usedGift.add(p.id);
+    return p;
+  };
 
   const sections: Record<SectionKey, React.ReactNode> = {
     slides: c.slides.length ? <Slider slides={c.slides} /> : (
@@ -164,7 +177,7 @@ export default async function Home() {
       </section>
     ),
 
-    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : (
+    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} follow={ig ? { href: ig, label: igName } : undefined} /> : (
       <section className="border-y border-ink/10">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 py-16 md:flex-row md:items-end md:justify-between md:py-20">
           <div>
@@ -187,13 +200,16 @@ export default async function Home() {
         <p className="mb-3 mt-4 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reviewsEyebrow}</p>
         <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2>
         <p className="mx-auto mt-4 max-w-md text-[13px] leading-relaxed opacity-60">Bought from us? We would love to hear how you wear it. Your words appear here once we have read them.</p>
-        <Link href={c.preview ? "/admin/reviews" : "/shop"} className="mt-8 inline-block border-b border-ink pb-1 text-[12px] tracking-[0.12em] uppercase">{c.preview ? "Add testimonials in Admin › Reviews →" : "Write a review →"}</Link>
+        <div className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-4">
+          <Link href={c.preview ? "/admin/reviews" : "/shop"} className="border-b border-ink pb-1 text-[12px] tracking-[0.12em] uppercase">{c.preview ? "Add testimonials in Admin › Reviews →" : "Write a review →"}</Link>
+          {s.mapsLink && <a href={s.mapsLink} target="_blank" rel="noopener" className="border-b border-ink/40 pb-1 text-[12px] tracking-[0.12em] uppercase opacity-70">Our reviews on Google →</a>}
+        </div>
       </section>
     ) : (
       <section className="mx-auto max-w-[1280px] px-6 py-20 md:py-28">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div><p className="mb-3 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reviewsEyebrow}</p><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2></div>
-          <p className="text-sm"><span className="text-gold">{"★".repeat(Math.round(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length))}</span> <span className="opacity-60">{(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length).toFixed(1)} from {quotes.length} customer{quotes.length === 1 ? "" : "s"}</span></p>
+          <p className="text-sm md:text-right">{s.mapsLink && <a href={s.mapsLink} target="_blank" rel="noopener" className="mb-2 block text-[11px] tracking-[0.12em] uppercase underline underline-offset-4 opacity-70">Read all reviews on Google →</a>}<span className="text-gold">{"★".repeat(Math.round(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length))}</span> <span className="opacity-60">{(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length).toFixed(1)} from {quotes.length} customer{quotes.length === 1 ? "" : "s"}</span></p>
         </div>
         <div className="no-scrollbar -mx-6 flex snap-x snap-mandatory gap-8 overflow-x-auto px-6 pb-2 md:gap-10">
           {quotes.slice(0, 12).map((r) => {
@@ -206,6 +222,7 @@ export default async function Home() {
                   <span className="text-gold" aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}</span>
                   <span className="mt-1 block font-medium tracking-[0.12em] uppercase">{r.name}{r.place && <span className="font-normal opacity-50"> · {r.place}</span>}</span>
                   {prod && <Link href={`/product/${prod.slug}`} className="mt-1 inline-block underline underline-offset-4 opacity-60">{prod.name}</Link>}
+                  {r.source === "google" && <span className="mt-1 block opacity-45">Review on Google</span>}
                 </figcaption>
               </figure>
             );
@@ -228,7 +245,12 @@ export default async function Home() {
           <div className="grid grid-cols-2 gap-x-6 md:grid-cols-4">
             {h.gifts.map((t) => (
               <Link key={t.id} href={t.href || "/shop"} className="group flex flex-col border-t border-ink/20 pt-5 pb-10">
-                {t.image && <Photo src={t.image} alt={t.title} sizes="(min-width:768px) 18vw, 45vw" className="mb-5 aspect-[4/5] w-full" />}
+                {(() => {
+                  const piece = t.image ? undefined : giftPiece(t.href);
+                  const src = t.image || piece?.image_url;
+                  return src ? <Photo src={src} alt={t.title} sizes="(min-width:768px) 18vw, 45vw" className="mb-5 aspect-[4/5] w-full bg-ivory" />
+                    : piece ? <span className="mb-5 block aspect-[4/5] w-full overflow-hidden bg-ivory p-[14%]"><span className="block h-full w-full transition duration-700 group-hover:scale-[1.04]"><ProductArt category={piece.category} metal={piece.metal} id={`g-${t.id}`} /></span></span> : null;
+                })()}
                 <span className="text-2xl leading-tight font-light tracking-[-0.03em] md:text-[28px]">{t.title}</span>
                 {t.text && <span className="mt-1 text-[12px] opacity-55">{t.text}</span>}
                 <span className="mt-4 text-[11px] tracking-[0.18em] uppercase underline-offset-4 opacity-70 group-hover:underline">{w.shopNow}</span>
@@ -297,15 +319,16 @@ export default async function Home() {
       </section>
     ),
 
-    visit: (place || mapQ) ? (
-      <section className="grid md:grid-cols-2">
-        <div className="flex flex-col justify-center bg-cream p-8 md:p-14">
+    visit: (place || mapSrc || directions) ? (
+      <section className={h.showMap && mapSrc ? "grid md:grid-cols-2" : "bg-cream"}>
+        <div className={`flex flex-col justify-center bg-cream ${h.showMap && mapSrc ? "p-8 md:p-14" : "mx-auto max-w-[1280px] px-6 py-16 md:py-20"}`}>
           <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{h.visitTitle}</h2>
           {h.visitText && <p className="mt-4 max-w-sm text-sm opacity-75">{h.visitText}</p>}
-          <address className="mt-6 space-y-1 text-sm not-italic">{place && <p>{place}</p>}{s.openingHours && <p className="opacity-70">{s.openingHours}</p>}{s.phone && <p><a href={`tel:${s.phone.replace(/\s/g, "")}`}>{s.phone}</a></p>}</address>
-          {mapQ && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQ)}`} target="_blank" rel="noopener" className="btn btn-dark mt-6 self-start">Get directions</a>}
+          <address className="mt-6 space-y-1 text-sm not-italic">{place && <p>{place}</p>}{s.openingHours && <p className="opacity-70">{s.openingHours}</p>}{s.phone && !/0000/.test(s.phone) && <p><a href={`tel:${s.phone.replace(/\s/g, "")}`}>{s.phone}</a></p>}</address>
+          {directions && <a href={directions} target="_blank" rel="noopener" className="btn btn-dark mt-6 self-start">Get directions</a>}
+          {c.preview && !mapSrc && <Link href="/admin/seo" className="mt-4 text-[12px] underline opacity-60">Add your address or Google map code in Admin › Google and SEO to show the map →</Link>}
         </div>
-        {h.showMap && mapQ && <iframe title={`Map: ${s.brand}`} src={`https://www.google.com/maps?q=${encodeURIComponent(mapQ)}&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="h-[360px] w-full border-0 md:h-full md:min-h-[420px]" />}
+        {h.showMap && mapSrc && <iframe title={`Map: ${s.brand}`} src={mapSrc} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="h-[360px] w-full border-0 md:h-full md:min-h-[420px]" />}
       </section>
     ) : hint("Visit us", "Google and SEO (shop address)", "/admin/seo"),
   };
