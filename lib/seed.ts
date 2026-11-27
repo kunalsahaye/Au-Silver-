@@ -131,6 +131,90 @@ export const defaultCategories: CategoryItem[] = [
 function cat(slug: string, name: string, inMenu: boolean, description: string): CategoryItem {
   return { slug, name, image: "", inMenu, parent: "", description, seoTitle: "", seoDescription: "" };
 }
+const page = (slug: string, title: string, body: string): PageItem => ({ slug, title, body, inMenu: false, seoTitle: "", seoDescription: "", image: "" });
+/** Help and policy pages every shop needs. Plain starting text: the owner should read and adjust them in Admin › Pages. */
+export const helpPages = (s: Pick<SiteSettings, "deliveryDays" | "returnDays" | "brand">): PageItem[] => [
+  page("shipping", "Shipping and delivery", `We ship across India. Most orders arrive in ${s.deliveryDays || "3-7"} working days.
+
+## How it is packed
+Every piece is packed in a gift box with a care card, ready to give.
+
+## Tracking
+Once your order is on its way we send you the tracking details by message or email.
+
+## Delivery charges
+Any delivery charge is shown in your bag before you place the order.`),
+  page("returns", "Returns and exchanges", `Not quite right? You can return or exchange a piece within ${s.returnDays || "7"} days of delivery.
+
+## How to return
+Message us with your order number. We will arrange the pickup or tell you where to send it.
+
+## Condition
+Pieces must be unworn, in their original box and with the tag. Earrings cannot be returned for hygiene reasons, unless they arrive damaged.
+
+## Refunds
+Once we receive the piece we refund you within 5 to 7 working days, to the way you paid.`),
+  page("size-guide", "Size guide", `## Rings (Indian sizes)
+Wrap a strip of paper around the base of your finger, mark where it meets and measure the length in millimetres. Or measure the inside of a ring that fits you.
+
+- Size 8: 15.9 mm across, 50 mm around
+- Size 10: 16.5 mm across, 52 mm around
+- Size 12: 17.2 mm across, 54 mm around
+- Size 14: 17.8 mm across, 56 mm around
+- Size 16: 18.5 mm across, 58 mm around
+- Size 18: 19.1 mm across, 60 mm around
+- Size 20: 19.7 mm across, 62 mm around
+
+Between two sizes? Choose the larger one. Many of our rings can be adjusted; just ask.
+
+## Bracelets
+Measure around your wrist and add 1 to 2 cm for a comfortable fit.
+
+## Necklaces
+- 16 inches: sits at the base of the neck
+- 18 inches: rests on the collarbone, the most popular length
+- 20 to 22 inches: falls just below the collarbone
+- 24 inches and longer: for layering`),
+  page("care", "Jewellery care", `Sterling silver darkens a little over time when it meets air and moisture. A few habits keep it bright.
+
+## Every day
+- Put your jewellery on last, after perfume, lotion and hairspray
+- Take it off before swimming, bathing, the gym or cleaning
+- Wipe it with a soft dry cloth after wearing
+
+## Storing
+Keep each piece in its pouch or box, away from damp. An airtight zip bag slows tarnish.
+
+## Cleaning
+Polish gently with a silver polishing cloth. For deeper cleaning use mild soap in warm water, rinse and dry fully. Avoid harsh chemicals and toothpaste.`),
+  page("privacy", "Privacy policy", `This page explains what we collect when you use the ${s.brand} website and why.
+
+## What we collect
+When you place an order, send an enquiry, write a review or join our list, we keep the details you give us: your name, email, phone, address and message.
+
+## Why
+Only to deliver your order, answer you, and, if you joined our list, send you news and offers. You can unsubscribe at any time.
+
+## Sharing
+We share your address and phone only with our delivery partner, and never sell your details.
+
+## Your choices
+Write to us to see, correct or delete the details we hold about you.`),
+  page("terms", "Terms and conditions", `By ordering from ${s.brand} you agree to these terms.
+
+## Products
+Every piece is 925 sterling silver. Handmade pieces can vary slightly, and colours can look a little different on screens.
+
+## Prices and orders
+Prices are in Indian rupees. We confirm every order and payment with you before it is shipped. If a piece is no longer available we tell you and refund any payment.
+
+## Delivery, returns and refunds
+See our Shipping and delivery and Returns and exchanges pages.
+
+## Contact
+Questions about these terms? Get in touch through our Contact page.`),
+];
+
 export const defaultPages = (aboutBody: string): PageItem[] => [
   { slug: "about", title: "About us", body: aboutBody, inMenu: true, seoTitle: "", seoDescription: "", image: "" },
   { slug: "contact", title: "Contact", body: "Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.", inMenu: true, seoTitle: "", seoDescription: "", image: "" },
@@ -138,6 +222,7 @@ export const defaultPages = (aboutBody: string): PageItem[] => [
     slug: "faq", title: "FAQ", inMenu: false, seoTitle: "", seoDescription: "", image: "",
     body: "## Is your jewellery real silver?\nYes. Every piece is certified 925 sterling silver.\n\n## How do I care for my silver?\nStore it dry, away from perfume, and polish it with a soft cloth.\n\n## How long does delivery take?\nMost orders arrive in 3 to 7 working days.",
   },
+  ...helpPages(defaultSettings),
 ];
 export const defaultContent = (site: SiteSettings = defaultSettings): Content => ({
   site, sections: defaultSections, slides: defaultSlides, customers: defaultCustomers,
