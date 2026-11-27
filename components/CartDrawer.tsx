@@ -54,7 +54,7 @@ export default function CartDrawer({ cur, freeOver, shipBar, labels }: {
                   <div className="flex items-center border border-ink/15">
                     <button type="button" onClick={() => setQty(l.slug, l.qty - 1)} aria-label={`One less ${l.name}`} className="h-8 w-8">−</button>
                     <span className="w-6 text-center text-xs tabular-nums">{l.qty}</span>
-                    <button type="button" onClick={() => setQty(l.slug, l.qty + 1)} aria-label={`One more ${l.name}`} className="h-8 w-8">+</button>
+                    <button type="button" onClick={() => setQty(l.slug, l.qty + 1)} disabled={l.qty >= (l.stock ?? 20)} aria-label={`One more ${l.name}`} className="h-8 w-8 disabled:opacity-30">+</button>
                   </div>
                   <button type="button" onClick={() => setQty(l.slug, 0)} className="text-[11px] underline opacity-60">Remove</button>
                 </div>

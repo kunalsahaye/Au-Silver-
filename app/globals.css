@@ -52,3 +52,11 @@ body { background: var(--ivory); color: var(--ink); font-family: "Inter Variable
 .site-theme .rounded-box { border-radius:var(--radius-box); }
 .no-scrollbar::-webkit-scrollbar { display:none; }
 .no-scrollbar { scrollbar-width:none; }
+
+/* Keyboard users always see where they are. */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--ink, #24140b); outline-offset: 2px; }
+.field:focus-visible { outline: 2px solid var(--ink, #24140b); outline-offset: 0; }
+/* Respect "reduce motion" in the phone or computer settings. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

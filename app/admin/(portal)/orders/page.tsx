@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { orderStatus } from "../../actions";
 import { getOrders, getSettings } from "@/lib/store";
-import { money } from "@/lib/format";
+import { orderRef, money } from "@/lib/format";
 
 const STATUSES = ["new", "confirmed", "shipped", "delivered", "cancelled"] as const;
 
@@ -23,7 +23,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
         {list.map((o) => (
           <div key={o.id} className="rounded-2xl bg-white p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div><p className="font-medium">{o.name} · {money(s.currency, Number(o.total))}</p><p className="text-sm opacity-60"><a href={`mailto:${o.email}`} className="underline">{o.email}</a>{o.phone && ` · ${o.phone}`} · {new Date(o.created_at).toLocaleString("en-IN")}</p></div>
+              <div><p className="font-medium"><span className="mr-2 font-mono text-xs opacity-60">{orderRef(o.id)}</span>{o.name} · {money(s.currency, Number(o.total))}</p><p className="text-sm opacity-60"><a href={`mailto:${o.email}`} className="underline">{o.email}</a>{o.phone && ` · ${o.phone}`} · {new Date(o.created_at).toLocaleString("en-IN")}</p></div>
               <form action={orderStatus} className="flex gap-2">
                 <input type="hidden" name="id" value={o.id} />
                 <select name="status" defaultValue={o.status} className="field !w-auto !py-1.5 text-sm">{STATUSES.map((x) => <option key={x}>{x}</option>)}</select>

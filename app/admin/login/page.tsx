@@ -15,7 +15,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           <p className="rounded-xl bg-burgundy/10 p-3 text-sm text-burgundy">The portal is not set up yet. Add these environment variables in Vercel, then redeploy: {problems.join(", ")}.</p>
         )}
         {usingDemoLogins() && <p className="rounded-xl bg-gold/15 p-3 text-xs">Local development: sign in with admin@demo.com / admin123. Demo logins never work on the live site.</p>}
-        {error && <p className="text-sm text-burgundy">Incorrect email or password.</p>}
+        {error && <p role="alert" className="text-sm text-burgundy">{error === "locked" ? "Too many tries. Please wait 15 minutes and try again." : "Incorrect email or password."}</p>}
         <input name="email" type="email" placeholder="Email" className="field" required autoFocus />
         <input name="password" type="password" placeholder="Password" className="field" required />
         <button className="btn btn-dark w-full">Sign in</button>

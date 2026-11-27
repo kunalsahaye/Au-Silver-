@@ -51,7 +51,8 @@ export default async function ProductPage({ params }: P) {
   const pairs = pl.upsell.on ? all.filter((x) => x.category !== p.category && x.stock > 0).sort((a, b) => Number(b.bestseller) - Number(a.bestseller) || Number(b.featured) - Number(a.featured)).slice(0, 4) : [];
   const minis = all.map((x) => ({ slug: x.slug, name: x.name, price: money(s.currency, x.price), image: x.image_url || x.images[0] || s.productPlaceholder }));
   const reels = c.reels.filter((r) => r.where !== "home");
-  const rows = [["Material", p.material], ["Finish", p.finish], ["Metal tone", p.metal], ["Category", catName], ["Availability", p.stock > 0 ? "In stock" : w.soldOut]];
+  // Only details the shop has filled in are shown; nothing is guessed.
+  const rows = ([["Material", p.material], ["Finish", p.finish], ["Metal tone", p.metal], ["Stone", p.seo.stone], ["Weight", p.seo.weight], ["Size", p.seo.size], ["Category", catName], ["Availability", p.stock > 0 ? "In stock" : w.soldOut]] as [string, string | undefined][]).filter((r): r is [string, string] => !!r[1]);
   const crumbs: [string, string][] = [["Home", "/"], [w.shopAllTitle, "/shop"], ...(parent ? [[parent.name, `/shop/${parent.slug}`] as [string, string]] : []), [catName, `/shop/${p.category}`], [p.name, `/product/${p.slug}`]];
   return (
     <div className="mx-auto max-w-7xl px-5 py-12">
@@ -82,7 +83,7 @@ export default async function ProductPage({ params }: P) {
           </p>
           {low && <p className="mt-2 flex items-center gap-2 text-sm text-[#9a3b2f]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />{c.plugins.lowStock.text.replace("{n}", String(p.stock))}</p>}
           <div className="mt-5 space-y-3">
-            <AddToCart slug={p.slug} name={p.name} price={p.price} image={thumb} soldOut={out} labels={[w.addToBag, w.addedToBag, w.soldOut]} />
+            <AddToCart slug={p.slug} name={p.name} price={p.price} image={thumb} soldOut={out} stock={p.stock} buyNow="Buy now" labels={[w.addToBag, w.addedToBag, w.soldOut]} />
             {out && pl.restock.on && (
               <div className="space-y-3 border border-ink/15 p-4">
                 <p className="text-sm">{pl.restock.text}</p>
