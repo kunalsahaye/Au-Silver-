@@ -35,6 +35,7 @@ export async function upsertProduct(fd: FormData) {
     seo: {
       title: s(fd, "seoTitle").slice(0, 70), description: s(fd, "seoDescription").slice(0, 170),
       alt: s(fd, "alt").slice(0, 150), sku: s(fd, "sku").slice(0, 40),
+      ...(Number(s(fd, "compareAt")) > Number(s(fd, "price")) ? { compareAt: Math.round(Number(s(fd, "compareAt"))) } : {}),
     },
     featured: fd.get("featured") === "on", bestseller: fd.get("bestseller") === "on",
   });

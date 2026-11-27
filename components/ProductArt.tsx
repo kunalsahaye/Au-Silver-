@@ -44,8 +44,9 @@ export default function ProductArt({ category, metal, id }: { category: Category
       {shape === "bracelets" && (
         <g fill="none" stroke={`url(#${g})`} strokeWidth="9">
           {Array.from({ length: 9 }).map((_, i) => {
-            const t = (i / 9) * Math.PI * 2;
-            return <ellipse key={i} cx={100 + Math.cos(t) * 56} cy={100 + Math.sin(t) * 56} rx="17" ry="9" transform={`rotate(${(t * 180) / Math.PI + 90} ${100 + Math.cos(t) * 56} ${100 + Math.sin(t) * 56})`} />;
+            // Rounded so the server and the browser print exactly the same numbers.
+            const t = (i / 9) * Math.PI * 2, x = Math.round((100 + Math.cos(t) * 56) * 100) / 100, y = Math.round((100 + Math.sin(t) * 56) * 100) / 100;
+            return <ellipse key={i} cx={x} cy={y} rx="17" ry="9" transform={`rotate(${i * 40 + 90} ${x} ${y})`} />;
           })}
         </g>
       )}

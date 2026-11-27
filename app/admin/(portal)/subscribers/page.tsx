@@ -21,7 +21,7 @@ export default async function Subscribers() {
         {!list.length && <p className="p-6 text-sm opacity-60">No sign-ups yet. Turn on the popup or footer sign-up in Plugins.</p>}
         {list.map((s) => (
           <div key={s.id} className="flex items-center justify-between gap-3 p-4 text-sm">
-            <div><p>{s.email}</p><p className="text-xs opacity-50">{s.source || "—"} · {new Date(s.created_at).toLocaleDateString("en-IN")}</p></div>
+            <div><p>{s.email}</p><p className="text-xs opacity-50">{s.source.startsWith("restock:") ? `Back in stock: ${s.source.slice(8)}` : s.source || "—"} · {new Date(s.created_at).toLocaleDateString("en-IN")}</p></div>
             <form action={remove}><input type="hidden" name="id" value={s.id} /><button className="text-xs underline opacity-60">Remove</button></form>
           </div>
         ))}

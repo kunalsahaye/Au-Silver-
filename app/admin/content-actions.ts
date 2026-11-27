@@ -179,6 +179,20 @@ export async function saveReels(fd: FormData) {
   });
 }
 
+/** Many Instagram reel links at once (one per line). Links already in the list are skipped. */
+export async function addReelLinks(fd: FormData) {
+  await update("/admin/reels", (c) => {
+    const have = new Set(c.reels.map((r) => igCode(r.instagram)).filter(Boolean));
+    const found = String(fd.get("links") ?? "").split(/[\s,]+/).map((u) => u.trim().replace(/^(?!https:)(www\.)?instagram\.com/, "https://www.instagram.com")).filter((u) => igCode(u));
+    for (const u of found.slice(0, 40)) {
+      const code = igCode(u);
+      if (have.has(code)) continue;
+      have.add(code);
+      c.reels.push({ id: newId(), media: "", poster: "", caption: "", href: "", where: "both", instagram: `https://www.instagram.com/reel/${code}/` });
+    }
+  });
+}
+
 export async function saveReviews(fd: FormData) {
   await update("/admin/reviews", (c) => {
     c.reviews = list(fd).map((x): Review => ({
@@ -221,6 +235,12 @@ export async function savePlugins(fd: FormData) {
       whatsapp: { on: on("whatsapp"), number: t("whatsapp.number", 30), text: t("whatsapp.text", 300) },
       recent: { on: on("recent"), title: t("recent.title", 80) || d.recent.title },
       stickyBuy: { on: on("stickyBuy") },
+      badges: { on: on("badges"), newDays: n("badges.newDays", d.badges.newDays, 1, 120) },
+      lowStock: { on: on("lowStock"), threshold: n("lowStock.threshold", d.lowStock.threshold, 1, 50), text: t("lowStock.text", 60) || d.lowStock.text },
+      quickAdd: { on: on("quickAdd") },
+      cartDrawer: { on: on("cartDrawer") },
+      countdown: { on: on("countdown"), text: t("countdown.text", 120), ends: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(t("countdown.ends", 20)) ? t("countdown.ends", 20) : "", href: t("countdown.href", 300) },
+      restock: { on: on("restock"), text: t("restock.text", 200) || d.restock.text },
     };
     c.plugins = p;
     if (fd.has("coupons")) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseFaq, plainAnswer } from "@/lib/faq";
 import Media from "@/components/Media";
 import Photo from "@/components/Photo";
 import ProductCard from "@/components/ProductCard";
@@ -52,7 +53,9 @@ export default async function Home() {
   const coll = c.categories.find((x) => x.slug === h.collection.category);
   const collItems = coll ? all.filter((p) => p.category === coll.slug || c.categories.some((x) => x.slug === p.category && x.parent === coll.slug)).slice(0, 8) : [];
   const faqPage = c.pages.find((p) => p.slug === "faq");
-  const faqs = (faqPage?.body ?? "").split(/^## /m).slice(1).map((b) => { const [q, ...a] = b.split("\n"); return { q: q.trim(), a: a.join(" ").replace(/^- /gm, "").trim() }; }).filter((x) => x.q).slice(0, 5);
+  // One question from each topic first, so the homepage shows a spread (orders, shipping, returns …).
+  const faqGroups = parseFaq(faqPage?.body ?? "");
+  const faqs = [...faqGroups.map((g) => g.items[0]), ...faqGroups.flatMap((g) => g.items.slice(1))].slice(0, 5).map((f) => ({ q: f.q, a: plainAnswer(f.a) }));
   const place = [s.address, s.city, s.region, s.postalCode].filter((x) => x && !/^Add your/i.test(x)).join(", ");
   const mapQ = s.latitude && s.longitude ? `${s.latitude},${s.longitude}` : place;
   const count = (slug: string) => all.filter((p) => p.category === slug).length;
@@ -295,17 +298,22 @@ export default async function Home() {
     ),
 
     faq: faqs.length > 0 && (
-      <section className="mx-auto max-w-3xl px-6 py-16">
-        <h2 className="mb-6 text-4xl tracking-[-0.045em]">{h.faqTitle}</h2>
-        <div className="divide-y divide-black/10 border-y border-black/10">
+      <section className="mx-auto grid max-w-[1280px] gap-8 px-6 py-16 md:grid-cols-[1fr_1.6fr] md:gap-16">
+        <div>
+          <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{h.faqTitle}</h2>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed opacity-60">Orders, delivery, returns and caring for your silver.</p>
+          <Link href="/faq" className="mt-6 inline-block border-b border-ink pb-1 text-[11px] tracking-[0.12em] uppercase">All questions →</Link>
+        </div>
+        <div className="divide-y divide-ink/10 border-y border-ink/10">
           {faqs.map((f) => (
-            <details key={f.q} className="group py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{f.q}<span className="text-xl transition group-open:rotate-45">+</span></summary>
-              <p className="mt-2 text-sm leading-relaxed opacity-75">{f.a}</p>
+            <details key={f.q} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[16px] leading-snug hover:opacity-70 [&::-webkit-details-marker]:hidden">{f.q}
+                <span aria-hidden className="relative h-3 w-3 shrink-0"><span className="absolute top-1/2 left-0 h-px w-3 bg-current" /><span className="absolute top-0 left-1/2 h-3 w-px bg-current transition group-open:rotate-90 group-open:opacity-0" /></span>
+              </summary>
+              <p className="max-w-xl pb-5 text-sm leading-relaxed opacity-70">{f.a}</p>
             </details>
           ))}
         </div>
-        <Link href="/faq" className="mt-4 inline-block text-[11px] underline">{faqPage?.title ?? "FAQ"} →</Link>
       </section>
     ),
 

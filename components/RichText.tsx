@@ -1,24 +1,38 @@
-/** Shows page text written in the admin: blank line = new paragraph, "## " = heading, "- " = bullet. */
+import { parseFaq } from "@/lib/faq";
+
+/** Shows page text written in the admin: blank line = new paragraph, "## " = heading, "- " = bullet. FAQ mode: "# Topic" groups, "## Question" opens an item. */
 export default function RichText({ text, faq = false }: { text: string; faq?: boolean }) {
   const blocks = text.replace(/\r/g, "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   if (faq) {
-    // Each "## Question" starts a new item; the lines after it are the answer.
-    const items: { q: string; a: string[] }[] = [];
-    for (const line of text.replace(/\r/g, "").split("\n")) {
-      if (line.startsWith("## ")) items.push({ q: line.slice(3).trim(), a: [] });
-      else if (items.length) items[items.length - 1].a.push(line);
-    }
-    if (items.length) {
+    const groups = parseFaq(text);
+    if (groups.length) {
+      const id = (t: string) => `faq-${t.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      const named = groups.filter((g) => g.topic);
       return (
-        <div className="divide-y divide-black/10 border-y border-black/10">
-          {items.map((it, i) => (
-            <details key={i} className="group py-5" open={i === 0}>
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-semibold">
-                {it.q}<span className="text-2xl font-light transition group-open:rotate-45">+</span>
-              </summary>
-              <div className="mt-3 opacity-75"><RichText text={it.a.join("\n").trim()} /></div>
-            </details>
-          ))}
+        <div>
+          {named.length > 1 && (
+            <nav aria-label="FAQ topics" className="no-scrollbar -mx-5 mb-10 flex gap-2 overflow-x-auto px-5">
+              {named.map((g) => <a key={g.topic} href={`#${id(g.topic)}`} className="rounded-full border border-ink/20 px-4 py-2 text-[11px] tracking-[0.12em] whitespace-nowrap uppercase hover:border-ink">{g.topic}</a>)}
+            </nav>
+          )}
+          <div className="space-y-14">
+            {groups.map((g, gi) => (
+              <section key={gi} id={g.topic ? id(g.topic) : undefined} className="scroll-mt-28">
+                {g.topic && <h2 className="mb-4 text-[11px] tracking-[0.22em] uppercase opacity-50">{g.topic}</h2>}
+                <div className="divide-y divide-ink/10 border-y border-ink/10">
+                  {g.items.map((it, i) => (
+                    <details key={i} className="group" open={gi === 0 && i === 0}>
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[17px] leading-snug tracking-[-0.01em] hover:opacity-70 [&::-webkit-details-marker]:hidden">
+                        {it.q}
+                        <span aria-hidden className="relative h-3 w-3 shrink-0"><span className="absolute top-1/2 left-0 h-px w-3 bg-current" /><span className="absolute top-0 left-1/2 h-3 w-px bg-current transition group-open:rotate-90 group-open:opacity-0" /></span>
+                      </summary>
+                      <div className="max-w-2xl pb-6 text-[15px] opacity-75"><RichText text={it.a} /></div>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
       );
     }

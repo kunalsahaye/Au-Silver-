@@ -10,10 +10,15 @@ import { fontsHref, themeVars } from "@/lib/theme";
 import Popup from "@/components/plugins/Popup";
 import SignupForm from "@/components/plugins/SignupForm";
 import WhatsApp from "@/components/plugins/WhatsApp";
+import Countdown from "@/components/plugins/Countdown";
+import CartDrawer from "@/components/CartDrawer";
+import CardOptions from "@/components/CardOptions";
 
 export const dynamic = "force-dynamic";
 
 const LEGAL = ["privacy", "terms"];
+/** Request time, used to decide which products count as "New". */
+const serverNow = () => Date.now();
 const socialName = (u: string) => {
   const host = u.replace(/^https?:\/\/(www\.)?/, "");
   const known: Record<string, string> = { "instagram.com": "Instagram", "facebook.com": "Facebook", "youtube.com": "YouTube", "pinterest.com": "Pinterest", "x.com": "X", "twitter.com": "X" };
@@ -33,8 +38,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const wa = s.whatsapp.replace(/[^0-9]/g, "");
   const pl = c.plugins;
   const fonts = fontsHref(c.theme);
+  const cardOpts = { now: serverNow(), addToBag: w.addToBag, added: w.addedToBag, badges: pl.badges, lowStock: pl.lowStock, quickAdd: pl.quickAdd.on };
   return (
-    <CartProvider>
+    <CartProvider drawer={pl.cartDrawer.on}>
+    <CardOptions value={cardOpts}>
       <Track />
       {fonts && <><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" /><link rel="stylesheet" href={fonts} precedence="default" /></>}
       <div className="site-theme flex min-h-screen flex-col" style={themeVars(c.theme)}>
@@ -46,6 +53,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             <a href="/admin/preview/exit" className="underline">Exit preview</a>
           </div>
         )}
+        {pl.countdown.on && pl.countdown.ends && <Countdown text={pl.countdown.text} ends={pl.countdown.ends} href={pl.countdown.href} />}
         {s.announcement && <div className="bg-[var(--bar)] px-4 py-2 text-center text-[10px] tracking-wide text-white/80">{s.announcement}</div>}
         <header className="sticky top-0 z-40 border-b border-black/5 bg-ivory/95 backdrop-blur">
           <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_auto_1fr] items-center px-6 py-4">
@@ -97,6 +105,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </div>
         </header>
         <main className="flex-1">{children}</main>
+        {pl.cartDrawer.on && <CartDrawer cur={s.currency} shipBar={pl.shipBar.on} freeOver={s.freeShippingOver === "" ? null : Number(s.freeShippingOver)}
+          labels={{ title: w.bagTitle, empty: w.bagEmpty, checkout: "Check out", keep: w.keepShopping, left: w.freeShipLeft, done: w.freeShipDone }} />}
         {pl.popup.on && <Popup p={pl.popup} button={w.subscribeButton} placeholder={w.emailPlaceholder} />}
         {pl.whatsapp.on && <WhatsApp number={pl.whatsapp.number || s.whatsapp} text={pl.whatsapp.text} />}
         <footer className="bg-[var(--bar)] text-white">
@@ -132,6 +142,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </div>
         </footer>
       </div>
+    </CardOptions>
     </CartProvider>
   );
 }

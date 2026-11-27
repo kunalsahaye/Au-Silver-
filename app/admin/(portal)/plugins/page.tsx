@@ -86,8 +86,8 @@ export default async function Plugins({ searchParams }: Q) {
           <p className="text-xs opacity-60">Bestsellers and featured pieces from other categories are suggested first. Mark products as Bestseller or Featured to steer it.</p>
         </Plugin>
 
-        <Plugin id="shipBar" on={p.shipBar.on} icon="🚚" title="Free-shipping progress bar" text="Shows in the bag how much more to spend for free shipping (amount set in Shop settings)" />
-        <Plugin id="whatsapp" on={p.whatsapp.on} icon="💬" title="WhatsApp chat button" text="A green button in the corner that opens a WhatsApp chat with you">
+        <Plugin id="shipBar" on={p.shipBar.on} icon="⇢" title="Free-shipping progress bar" text="Shows in the bag how much more to spend for free shipping (amount set in Shop settings)" />
+        <Plugin id="whatsapp" on={p.whatsapp.on} icon="✆" title="WhatsApp chat button" text="A green button in the corner that opens a WhatsApp chat with you">
           <div className="grid gap-4 sm:grid-cols-2">
             <T name="whatsapp.number" label="WhatsApp number with country code" value={p.whatsapp.number} hint="e.g. 919812345678. Leave empty to use the one in Shop settings." />
             <T name="whatsapp.text" label="Message it starts with" value={p.whatsapp.text} />
@@ -97,13 +97,34 @@ export default async function Plugins({ searchParams }: Q) {
           <T name="recent.title" label="Heading" value={p.recent.title} />
         </Plugin>
         <Plugin id="stickyBuy" on={p.stickyBuy.on} icon="▁" title="Sticky “Add to bag” on phones" text="Keeps the price and Add to bag button at the bottom of the screen on product pages" />
+        <Plugin id="cartDrawer" on={p.cartDrawer.on} icon="◧" title="Slide-out bag" text="When someone adds a piece, the bag slides in from the side so they can keep shopping or check out" />
+        <Plugin id="quickAdd" on={p.quickAdd.on} icon="+" title="Quick add on product pictures" text="An “Add to bag” button on every product picture in lists, so shoppers don't have to open each piece" />
+        <Plugin id="badges" on={p.badges.on} icon="◆" title="Product labels" text="New, Sale and Bestseller labels on product pictures. Sale shows when a piece has an old price set">
+          <T name="badges.newDays" label="Show “New” for (days after adding)" value={p.badges.newDays} type="number" />
+        </Plugin>
+        <Plugin id="lowStock" on={p.lowStock.on} icon="!" title="Low stock message" text="“Only 2 left” under the price when stock runs low, in lists and on the product page">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <T name="lowStock.threshold" label="Show it at or below (pieces)" value={p.lowStock.threshold} type="number" />
+            <T name="lowStock.text" label="Message" value={p.lowStock.text} hint="{n} becomes the number left." />
+          </div>
+        </Plugin>
+        <Plugin id="restock" on={p.restock.on} icon="↻" title="Back-in-stock alerts" text="On sold-out pieces, shoppers can leave their email. You get an email for each request, and they appear in Email sign-ups marked “Back in stock”">
+          <T name="restock.text" label="Message on sold-out pieces" value={p.restock.text} />
+        </Plugin>
+        <Plugin id="countdown" on={p.countdown.on} icon="◷" title="Offer countdown bar" text="A thin bar above the menu that counts down to the end of a sale. It hides itself when time is up">
+          <T name="countdown.text" label="Text before the timer" value={p.countdown.text} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <T name="countdown.ends" label="Offer ends (India time)" value={p.countdown.ends} type="datetime-local" />
+            <T name="countdown.href" label="Tapping it goes to (optional)" value={p.countdown.href} />
+          </div>
+        </Plugin>
       </EditorForm>
 
       <section className="max-w-3xl rounded-2xl bg-white p-6 shadow-sm">
         <p className="font-medium">Coming next</p>
         <p className="mt-1 text-sm opacity-60">Popular Shopify apps that can be added next, roughly in order of how much they help sales:</p>
         <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-          {["Product reviews with photos (customers write them)", "Back-in-stock alerts by email", "Abandoned bag emails (needs an email service)", "Online payments: Razorpay or Cashfree (UPI, cards)", "Wishlist", "Buy 2 get 1 / bundle offers", "Gift wrap and gift message", "Size guide popup", "Order tracking page", "Cash on delivery fee and pincode check"].map((x) => <li key={x} className="rounded-xl bg-[#f8f4ef] px-3 py-2">{x}</li>)}
+          {["Online payments: Razorpay or Cashfree (UPI, cards)", "Abandoned bag emails (needs an email service)", "Review photos from customers", "Buy 2 get 1 / bundle offers", "Gift wrap and gift message", "Order tracking page", "Cash on delivery fee and pincode check"].map((x) => <li key={x} className="rounded-xl bg-[#f8f4ef] px-3 py-2">{x}</li>)}
         </ul>
       </section>
     </div>
