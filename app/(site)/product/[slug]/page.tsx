@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddToCart from "@/components/AddToCart";
 import ProductArt from "@/components/ProductArt";
+import { WishButton } from "@/components/Wishlist";
 import ProductCard from "@/components/ProductCard";
 import Gallery from "@/components/Gallery";
 import JsonLd from "@/components/JsonLd";
@@ -36,6 +37,9 @@ export default async function ProductPage({ params }: P) {
   const catName = cat?.name ?? p.category;
   const photos = [p.image_url ?? "", ...p.images].filter(Boolean);
   const alt = p.seo.alt || `${p.name}, ${p.material || "silver"} ${catName.toLowerCase()}`;
+  const waNum = (c.plugins.whatsapp.number || s.whatsapp).replace(/[^0-9]/g, "");
+  const sized = ["rings", "bracelets", "necklaces", "anklets"].some((x) => p.category.includes(x.slice(0, -1)));
+  const hasPage = (slug: string) => c.pages.some((x) => x.slug === slug);
   const related = all.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 4);
   const pl = c.plugins;
   // Upsell: pieces from other categories that go with this one, bestsellers first.
@@ -71,6 +75,23 @@ export default async function ProductPage({ params }: P) {
           <div className="mt-5 space-y-3">
             <AddToCart slug={p.slug} name={p.name} price={p.price} soldOut={p.stock <= 0} labels={[w.addToBag, w.addedToBag, w.soldOut]} />
             <Link href={`/contact?product=${encodeURIComponent(p.name)}`} className="btn btn-line w-full">{w.enquire}</Link>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <WishButton slug={p.slug} name={p.name} />
+            {waNum && <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hi! I'd like to know more about ${p.name}: ${base}/product/${p.slug}`)}`} target="_blank" rel="noopener" className="text-[11px] tracking-[0.12em] uppercase underline-offset-4 hover:underline">Ask on WhatsApp</a>}
+            {sized && hasPage("size-guide") && <Link href="/size-guide" className="text-[11px] tracking-[0.12em] uppercase underline-offset-4 hover:underline">Size guide</Link>}
+          </div>
+          <div className="mt-8 divide-y divide-ink/10 border-y border-ink/10 text-sm">
+            {[
+              ["Delivery", `Delivered across India in ${s.deliveryDays || "3-7"} working days, gift boxed.`, "shipping"],
+              ["Returns and exchanges", `Easy returns within ${s.returnDays || "7"} days of delivery.`, "returns"],
+              ["Caring for silver", "Keep it dry, put it on after perfume and wipe it with a soft cloth after wearing.", "care"],
+            ].map(([t, d, slug]) => (
+              <details key={t} className="group py-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between">{t}<span aria-hidden className="text-lg font-light transition group-open:rotate-45">+</span></summary>
+                <p className="mt-2 text-[13px] leading-relaxed opacity-70">{d} {hasPage(slug) && <Link href={`/${slug}`} className="underline">Read more</Link>}</p>
+              </details>
+            ))}
           </div>
         </div>
       </div>

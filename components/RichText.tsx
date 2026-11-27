@@ -28,7 +28,9 @@ export default function RichText({ text, faq = false }: { text: string; faq?: bo
       {blocks.map((b, i) => {
         if (b.startsWith("## ")) {
           const [h, ...rest] = b.split("\n");
-          return <div key={i} className="space-y-2"><h2 className="pt-4 text-2xl font-bold tracking-tight">{h.slice(3)}</h2>{rest.length > 0 && <p className="whitespace-pre-line">{rest.join("\n")}</p>}</div>;
+          return <div key={i} className="space-y-2"><h2 className="pt-4 text-2xl font-bold tracking-tight">{h.slice(3)}</h2>{rest.length > 0 && (rest.every((l) => l.startsWith("- "))
+            ? <ul className="list-disc space-y-1 pl-5">{rest.map((l, j) => <li key={j}>{l.slice(2)}</li>)}</ul>
+            : <p className="whitespace-pre-line">{rest.join("\n")}</p>)}</div>;
         }
         const lines = b.split("\n");
         if (lines.every((l) => l.startsWith("- "))) return <ul key={i} className="list-disc space-y-1 pl-5">{lines.map((l, j) => <li key={j}>{l.slice(2)}</li>)}</ul>;

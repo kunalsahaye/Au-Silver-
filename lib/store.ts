@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { defaultContent, defaultHome, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
+import { helpPages, defaultContent, defaultHome, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
 import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, ProductReview, SiteSettings, Subscriber } from "./types";
 
@@ -134,7 +134,7 @@ async function kvDelete(k: string) {
   const d = load(); if (d.kv) delete d.kv[k]; save(d);
 }
 
-const LAYOUT = 3;
+const LAYOUT = 4;
 /** Fills gaps with defaults so older saved content keeps working when new fields are added. */
 function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   const base = defaultContent(site);
@@ -154,7 +154,9 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
       secs.forEach((x) => { if (x.key === "reels" || x.key === "reviews") x.on = true; });
     }
     // Layout 3: Visit us switched on now that the shop's Google Maps listing is linked.
-    secs.forEach((x) => { if (x.key === "visit") x.on = true; });
+    if ((c?.layout ?? 0) < 3) secs.forEach((x) => { if (x.key === "visit") x.on = true; });
+    // Layout 4: add the help and policy pages the shop didn't have yet.
+    for (const p of helpPages(out.site)) if (!out.pages.some((x) => x.slug === p.slug)) out.pages.push(p);
   }
   // The first template shipped a placeholder handle; point it at the official account.
   if (!out.site.instagram || out.site.instagram === "@aussilver") out.site.instagram = defaultSettings.instagram;
