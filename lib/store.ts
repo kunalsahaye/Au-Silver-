@@ -5,7 +5,7 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { defaultContent, defaultHome, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
-import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, SiteSettings, Subscriber } from "./types";
+import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, ProductReview, SiteSettings, Subscriber } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,6 +20,7 @@ interface Demo {
   enquiries: Enquiry[]; orders: Order[]; views: PageView[];
   kv?: Record<string, unknown>;
   subscribers?: Subscriber[];
+  reviews?: ProductReview[];
 }
 const FILE = path.join(os.tmpdir(), `demo-${path.basename(process.cwd())}.json`);
 function load(): Demo {
@@ -212,6 +213,41 @@ export async function deleteSubscriber(id: string) {
   await ready();
   if (sb) { await sb.from("subscribers").delete().eq("id", id); return; }
   const d = load(); d.subscribers = (d.subscribers ?? []).filter((x) => x.id !== id); save(d);
+}
+
+/* ---------- product reviews written by customers ---------- */
+export async function addReview(r: Pick<ProductReview, "product" | "name" | "place" | "rating" | "text">) {
+  await ready();
+  if (sb) {
+    const { error } = await sb.from("reviews").insert({ ...r, status: "pending" });
+    if (error) throw new Error(`Could not save review: ${error.message}`);
+    return;
+  }
+  const d = load(); d.reviews ??= [];
+  d.reviews.unshift({ ...r, id: uid(), status: "pending", created_at: new Date().toISOString() }); save(d);
+}
+export async function getReviews(o: { product?: string; status?: ProductReview["status"] } = {}): Promise<ProductReview[]> {
+  await ready();
+  if (sb) {
+    let q = sb.from("reviews").select("*").order("created_at", { ascending: false });
+    if (o.product) q = q.eq("product", o.product);
+    if (o.status) q = q.eq("status", o.status);
+    const { data, error } = await q;
+    if (error) console.error("[db] reviews:", error.message);
+    return (data as ProductReview[]) ?? [];
+  }
+  return (load().reviews ?? []).filter((r) => (!o.product || r.product === o.product) && (!o.status || r.status === o.status));
+}
+export async function setReviewStatus(id: string, status: ProductReview["status"] | "delete") {
+  await ready();
+  if (sb) {
+    if (status === "delete") await sb.from("reviews").delete().eq("id", id);
+    else await sb.from("reviews").update({ status }).eq("id", id);
+    return;
+  }
+  const d = load();
+  d.reviews = status === "delete" ? (d.reviews ?? []).filter((r) => r.id !== id) : (d.reviews ?? []).map((r) => (r.id === id ? { ...r, status } : r));
+  save(d);
 }
 
 /* ---------- Instagram connection (kept apart from the content: the key is private) ---------- */

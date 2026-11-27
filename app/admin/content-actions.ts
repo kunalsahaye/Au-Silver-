@@ -143,6 +143,25 @@ export async function saveBlocks(fd: FormData) {
   });
 }
 
+/** Approve, hide or delete a customer's product review, or copy it to the homepage testimonials. */
+export async function moderateReview(fd: FormData) {
+  await guard();
+  const { getReviews, setReviewStatus } = await import("@/lib/store");
+  const id = str(fd.get("id"), 60), act = str(fd.get("act"), 20);
+  if (act === "approve" || act === "hidden" || act === "delete") await setReviewStatus(id, act === "approve" ? "approved" : act);
+  if (act === "feature") {
+    const r = (await getReviews()).find((x) => x.id === id);
+    if (r) {
+      if (r.status !== "approved") await setReviewStatus(id, "approved");
+      await update("/admin/reviews", (c) => {
+        if (!c.reviews.some((x) => x.id === r.id.slice(0, 20))) c.reviews.unshift({ id: r.id.slice(0, 20), name: r.name, place: r.place, text: r.text, rating: r.rating, product: r.product });
+      });
+    }
+  }
+  revalidatePath("/", "layout");
+  redirect("/admin/reviews");
+}
+
 export async function saveReels(fd: FormData) {
   await update("/admin/reels", (c) => {
     c.reels = list(fd).map((x): Reel => ({

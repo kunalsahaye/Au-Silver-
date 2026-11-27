@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { addSubscriber, createEnquiry, createOrder, getContent, getProducts } from "@/lib/store";
+import { addReview, addSubscriber, createEnquiry, createOrder, getContent, getProducts } from "@/lib/store";
 import { applyCoupon, type CouponResult } from "@/lib/coupons";
 import { money, shippingFor } from "@/lib/format";
 import { notify } from "@/lib/mail";
@@ -75,4 +75,16 @@ export async function subscribe(_: unknown, fd: FormData): Promise<{ ok: boolean
   const fresh = await addSubscriber(email, clean(fd.get("source"), 30));
   if (fresh) await notify("New email sign-up", `<p>${esc(email)} joined your list.</p>`);
   return { ok: true, msg: fresh ? "You're on the list. Thank you!" : "You're already on our list. Thank you!" };
+}
+
+/** A customer's review from a product page. Saved as waiting until the shop approves it. */
+export async function submitReview(_: unknown, fd: FormData): Promise<{ ok: boolean; msg: string }> {
+  if (clean(fd.get("website"))) return { ok: true, msg: "Thank you!" };
+  const product = clean(fd.get("product"), 120);
+  const r = { product, name: clean(fd.get("name"), 60), place: clean(fd.get("place"), 60), rating: Math.min(5, Math.max(1, Math.round(Number(fd.get("rating")) || 5))), text: clean(fd.get("text"), 1000) };
+  if (!r.name || r.text.length < 10) return { ok: false, msg: "Please add your name and a few words about the piece." };
+  if (!(await getProducts()).some((p) => p.slug === product)) return { ok: false, msg: "That piece could not be found." };
+  await addReview(r);
+  await notify(`New review to approve: ${r.rating}★ from ${r.name}`, `<p>${esc(r.text)}</p><p>Approve it in Admin › Reviews.</p>`);
+  return { ok: true, msg: "Thank you! Your review will appear once we've read it." };
 }

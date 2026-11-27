@@ -42,6 +42,12 @@ create table if not exists subscribers (
   id uuid primary key default gen_random_uuid(),
   email text unique not null, source text default '', created_at timestamptz default now()
 );
+-- Reviews customers write on product pages; shown once the shop approves them.
+create table if not exists reviews (
+  id uuid primary key default gen_random_uuid(),
+  product text not null, name text not null, place text default '', rating int not null default 5,
+  text text not null, status text not null default 'pending', created_at timestamptz default now()
+);
 create table if not exists page_views (
   id bigserial primary key, path text, created_at timestamptz default now()
 );
@@ -52,6 +58,7 @@ alter table enquiries enable row level security;
 alter table orders enable row level security;
 alter table page_views enable row level security;
 alter table subscribers enable row level security;
+alter table reviews enable row level security;
 
 -- Checkout: save an order and take its items out of stock in one transaction.
 -- Fails with OUT_OF_STOCK:<item name> (and saves nothing) if any item has too little stock.
