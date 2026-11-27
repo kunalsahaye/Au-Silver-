@@ -1,3 +1,4 @@
+import { defaultFaq } from "./faq";
 import type { CategoryItem, Content, Customer, HomeBlocks, PageItem, Plugins, Product, Section, SiteSettings, Slide, Theme } from "./types";
 
 export const defaultSettings: SiteSettings = {
@@ -119,6 +120,12 @@ export const defaultPlugins: Plugins = {
   whatsapp: { on: false, number: "", text: "Hi! I have a question about a piece on your website." },
   recent: { on: true, title: "Recently viewed" },
   stickyBuy: { on: true },
+  badges: { on: true, newDays: 30 },
+  lowStock: { on: true, threshold: 3, text: "Only {n} left" },
+  quickAdd: { on: true },
+  cartDrawer: { on: true },
+  countdown: { on: false, text: "Festive offer ends in", ends: "", href: "/shop" },
+  restock: { on: true, text: "Sold out for now. Leave your email and we'll tell you when it's back." },
 };
 export const defaultSlides: Slide[] = [];
 export const defaultCustomers: Customer[] = [];
@@ -220,7 +227,7 @@ export const defaultPages = (aboutBody: string): PageItem[] => [
   { slug: "contact", title: "Contact", body: "Custom pieces, sizing help or a gift in mind? Send us a note and we will reply within a day.", inMenu: true, seoTitle: "", seoDescription: "", image: "" },
   {
     slug: "faq", title: "FAQ", inMenu: false, seoTitle: "", seoDescription: "", image: "",
-    body: "## Is your jewellery real silver?\nYes. Every piece is certified 925 sterling silver.\n\n## How do I care for my silver?\nStore it dry, away from perfume, and polish it with a soft cloth.\n\n## How long does delivery take?\nMost orders arrive in 3 to 7 working days.",
+    body: defaultFaq(defaultSettings),
   },
   ...helpPages(defaultSettings),
 ];

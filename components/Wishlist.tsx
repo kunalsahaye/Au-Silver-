@@ -44,6 +44,18 @@ export function WishButton({ slug, name }: { slug: string; name: string }) {
   );
 }
 
+/** Round heart on product pictures. */
+export function WishHeart({ slug, name }: { slug: string; name: string }) {
+  const on = useSaved().includes(slug);
+  return (
+    <button type="button" aria-pressed={on} aria-label={on ? `Remove ${name} from your wishlist` : `Save ${name} to your wishlist`}
+      onClick={() => write(on ? read().filter((x) => x !== slug) : [...read().filter((x) => x !== slug), slug])}
+      className={`grid h-9 w-9 place-items-center rounded-full bg-ivory/90 backdrop-blur transition hover:scale-105 ${on ? "text-wine" : ""}`}>
+      <Heart filled={on} />
+    </button>
+  );
+}
+
 export function WishLink() {
   const n = useSaved().length;
   return (

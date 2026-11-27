@@ -5,6 +5,7 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { helpPages, defaultContent, defaultHome, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
+import { defaultFaq, oldDefaultFaq } from "./faq";
 import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, ProductReview, SiteSettings, Subscriber } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -134,7 +135,7 @@ async function kvDelete(k: string) {
   const d = load(); if (d.kv) delete d.kv[k]; save(d);
 }
 
-const LAYOUT = 4;
+const LAYOUT = 5;
 /** Fills gaps with defaults so older saved content keeps working when new fields are added. */
 function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   const base = defaultContent(site);
@@ -157,6 +158,9 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
     if ((c?.layout ?? 0) < 3) secs.forEach((x) => { if (x.key === "visit") x.on = true; });
     // Layout 4: add the help and policy pages the shop didn't have yet.
     for (const p of helpPages(out.site)) if (!out.pages.some((x) => x.slug === p.slug)) out.pages.push(p);
+    // Layout 5: grouped FAQ, only where the owner never changed the first three starter questions.
+    const faq = out.pages.find((x) => x.slug === "faq");
+    if (faq && faq.body.replace(/\r/g, "").trim() === oldDefaultFaq) faq.body = defaultFaq(out.site);
   }
   // The first template shipped a placeholder handle; point it at the official account.
   if (!out.site.instagram || out.site.instagram === "@aussilver") out.site.instagram = defaultSettings.instagram;

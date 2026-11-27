@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import JsonLd from "@/components/JsonLd";
 import Photo from "@/components/Photo";
@@ -21,7 +22,15 @@ export default async function CustomPage({ params }: P) {
       {faq && <JsonLd data={faq} />}
       <h1 className="serif mb-10 text-5xl leading-tight italic md:text-6xl">{page.title}</h1>
       {page.image && <Photo src={page.image} alt={page.title} eager className="mb-10 aspect-[16/9] w-full rounded-2xl" />}
-      <div className="text-lg opacity-85"><RichText text={page.body} faq={slug === "faq"} /></div>
+      {slug === "faq" ? (
+        <>
+          <RichText text={page.body} faq />
+          <div className="mt-16 flex flex-col gap-4 bg-cream p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-xl tracking-[-0.02em]">Still have a question?</p><p className="mt-1 text-sm opacity-60">We usually reply within a day.</p></div>
+            <Link href="/contact" className="btn btn-dark shrink-0">Ask us</Link>
+          </div>
+        </>
+      ) : <div className="text-lg opacity-85"><RichText text={page.body} /></div>}
     </div>
   );
 }

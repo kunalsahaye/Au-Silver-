@@ -1,6 +1,8 @@
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import JsonLd from "@/components/JsonLd";
+import SubmitOnChange from "@/components/SubmitOnChange";
+import { money } from "@/lib/format";
 import { getProducts } from "@/lib/store";
 import { baseUrl, breadcrumbLd } from "@/lib/seo";
 import { words } from "@/lib/words";
@@ -8,7 +10,10 @@ import type { CategoryItem, Content } from "@/lib/types";
 
 export type ShopQuery = { q?: string; metal?: string; sort?: string; stock?: string; min?: string; max?: string; page?: string };
 const PER_PAGE = 24;
-const SORTS: [string, string][] = [["", "Recommended"], ["new", "Newest"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["name", "Name A–Z"]];
+const SORTS: [string, string][] = [["", "Featured"], ["best", "Best selling"], ["new", "Newest"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["name", "Name A–Z"]];
+const METALS: [string, string][] = [["", "All metals"], ["silver", "Silver"], ["gold", "Gold tone"], ["rose", "Rose tone"]];
+const sel = "cursor-pointer border-0 bg-transparent py-0.5 uppercase tracking-[0.08em] focus:outline-none";
+const num = "w-16 border-b border-ink/20 bg-transparent py-0.5 text-[11px] focus:border-ink focus:outline-none";
 
 /** True when the address has filters, so search engines should not index this exact view. */
 export const isFiltered = (q: ShopQuery) => !!(q.q || q.metal || q.sort || q.stock || q.min || q.max);
@@ -33,6 +38,7 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
   const by: Record<string, (a: typeof list[0], b: typeof list[0]) => number> = {
     new: (a, b) => b.created_at.localeCompare(a.created_at), low: (a, b) => a.price - b.price, high: (a, b) => b.price - a.price,
     name: (a, b) => a.name.localeCompare(b.name),
+    best: (a, b) => Number(b.bestseller) - Number(a.bestseller) || Number(b.stock > 0) - Number(a.stock > 0),
     "": (a, b) => Number(b.bestseller) + Number(b.featured) - Number(a.bestseller) - Number(a.featured) || Number(b.stock > 0) - Number(a.stock > 0),
   };
   list = [...list].sort(by[q.sort ?? ""] ?? by[""]);
@@ -46,6 +52,13 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
     Object.entries({ ...q, page: undefined, ...o }).forEach(([k, v]) => v && sp.set(k, String(v)));
     return `${to}${sp.size ? `?${sp}` : ""}`;
   };
+  const metalName = Object.fromEntries(METALS);
+  const active: [string, Partial<ShopQuery>][] = [
+    ...(q.q ? [[`“${q.q}”`, { q: undefined }] as [string, Partial<ShopQuery>]] : []),
+    ...(q.metal ? [[metalName[q.metal] ?? q.metal, { metal: undefined }] as [string, Partial<ShopQuery>]] : []),
+    ...(q.min || q.max ? [[`${q.min ? money(s.currency, Number(q.min)) : s.currency + "0"} – ${q.max ? money(s.currency, Number(q.max)) : "any"}`, { min: undefined, max: undefined }] as [string, Partial<ShopQuery>]] : []),
+    ...(q.stock === "in" ? [[w.inStockOnly, { stock: undefined }] as [string, Partial<ShopQuery>]] : []),
+  ];
   const chip = (on: boolean) => `eyebrow whitespace-nowrap rounded-full border px-4 py-2.5 ${on ? "border-ink bg-ink text-ivory" : "border-ink/20 hover:border-ink"}`;
   const top = c.categories.filter((x) => !x.parent);
   const children = cat ? c.categories.filter((x) => x.parent === (cat.parent || cat.slug)) : [];
@@ -75,24 +88,57 @@ export default async function ShopList({ c, cat, q }: { c: Content; cat: Categor
         </div>
       )}
 
-      <form action={path} className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-cream p-4 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-end">
-        <label className="col-span-2 text-xs md:col-span-1"><span className="mb-1 block opacity-60">Search</span><input name="q" type="search" defaultValue={q.q} placeholder={w.searchPlaceholder} className="field" /></label>
-        <label className="text-xs"><span className="mb-1 block opacity-60">Metal</span>
-          <select name="metal" defaultValue={q.metal ?? ""} className="field"><option value="">Any</option><option value="silver">Silver</option><option value="gold">Gold tone</option><option value="rose">Rose tone</option></select></label>
-        <label className="text-xs"><span className="mb-1 block opacity-60">Sort</span>
-          <select name="sort" defaultValue={q.sort ?? ""} className="field">{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-        <label className="text-xs"><span className="mb-1 block opacity-60">Min price</span><input name="min" type="number" min="0" inputMode="numeric" defaultValue={q.min} className="field" /></label>
-        <label className="text-xs"><span className="mb-1 block opacity-60">Max price</span><input name="max" type="number" min="0" inputMode="numeric" defaultValue={q.max} className="field" /></label>
-        <div className="col-span-2 flex items-center gap-4 md:col-span-1">
-          <label className="flex items-center gap-2 text-xs whitespace-nowrap"><input type="checkbox" name="stock" value="in" defaultChecked={q.stock === "in"} className="h-5 w-5" />{w.inStockOnly}</label>
-          <button className="btn btn-dark !px-5 !py-3">Apply</button>
+      <div className="sticky top-[65px] z-20 -mx-5 mt-8 border-y border-ink/10 bg-ivory/95 px-5 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none">
+        <form action={path} className="hidden items-center gap-6 py-3 text-[11px] tracking-[0.08em] uppercase md:flex">
+          <SubmitOnChange />
+          {q.q && <input type="hidden" name="q" value={q.q} />}
+          <span className="opacity-50">Filter</span>
+          <label className="flex items-center gap-2"><span className="sr-only">Metal</span>
+            <select name="metal" defaultValue={q.metal ?? ""} className={sel}>{METALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <span className="flex items-center gap-1.5">
+            <span className="opacity-50">{s.currency}</span><input name="min" type="number" min="0" inputMode="numeric" defaultValue={q.min} placeholder="Min" aria-label="Min price" className={num} />
+            <span className="opacity-40">–</span>
+            <input name="max" type="number" min="0" inputMode="numeric" defaultValue={q.max} placeholder="Max" aria-label="Max price" className={num} />
+            <button className="ml-1 underline underline-offset-4">Go</button>
+          </span>
+          <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" name="stock" value="in" defaultChecked={q.stock === "in"} className="h-4 w-4 accent-[var(--ink)]" />{w.inStockOnly}</label>
+          <span className="ml-auto opacity-50">{list.length} {w.pieces}</span>
+          <label className="flex items-center gap-2"><span className="opacity-50">Sort</span>
+            <select name="sort" defaultValue={q.sort ?? ""} className={sel}>{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        </form>
+        <details className="group md:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[11px] tracking-[0.12em] uppercase">
+            <span className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+              Filter and sort{active.length > 0 && ` (${active.length})`}
+            </span>
+            <span className="opacity-50">{list.length} {w.pieces}</span>
+          </summary>
+          <form action={path} className="grid grid-cols-2 gap-3 pb-5">
+            {q.q && <input type="hidden" name="q" value={q.q} />}
+            <label className="col-span-2 text-xs"><span className="mb-1 block opacity-60">Sort</span>
+              <select name="sort" defaultValue={q.sort ?? ""} className="field">{SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+            <label className="col-span-2 text-xs"><span className="mb-1 block opacity-60">Metal</span>
+              <select name="metal" defaultValue={q.metal ?? ""} className="field">{METALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+            <label className="text-xs"><span className="mb-1 block opacity-60">Min price</span><input name="min" type="number" min="0" inputMode="numeric" defaultValue={q.min} className="field" /></label>
+            <label className="text-xs"><span className="mb-1 block opacity-60">Max price</span><input name="max" type="number" min="0" inputMode="numeric" defaultValue={q.max} className="field" /></label>
+            <label className="col-span-2 flex items-center gap-2 py-1 text-sm"><input type="checkbox" name="stock" value="in" defaultChecked={q.stock === "in"} className="h-5 w-5" />{w.inStockOnly}</label>
+            <Link href={path} className="btn btn-line">Clear</Link>
+            <button className="btn btn-dark">Show {list.length}</button>
+          </form>
+        </details>
+      </div>
+      {active.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {active.map(([label, drop]) => (
+            <Link key={label} href={href(drop)} className="flex items-center gap-2 rounded-full border border-ink/20 px-3 py-1.5 text-[11px] hover:border-ink">{label}<span aria-hidden className="opacity-50">×</span><span className="sr-only">Remove filter</span></Link>
+          ))}
+          <Link href={path} className="ml-1 text-[11px] underline opacity-60">Clear all</Link>
         </div>
-      </form>
-      {isFiltered(q) && <Link href={path} className="mt-3 inline-block text-xs underline opacity-60">Clear filters</Link>}
+      )}
 
-      <p className="mt-6 text-sm opacity-60">{list.length} {w.pieces}</p>
-      <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-        {shown.map((p) => <ProductCard key={p.id} p={p} cur={s.currency} placeholder={s.productPlaceholder} soldOut={w.soldOut} />)}
+      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
+        {shown.map((p, i) => <ProductCard key={p.id} eager={i < 4} p={p} cur={s.currency} placeholder={s.productPlaceholder} soldOut={w.soldOut} />)}
       </div>
       {!list.length && <p className="py-20 text-center opacity-60">{w.emptyList}</p>}
       {pages > 1 && (

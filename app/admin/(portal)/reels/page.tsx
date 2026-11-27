@@ -1,4 +1,4 @@
-import { connectInstagram, disconnectInstagram, importInstagram, saveReels } from "../../content-actions";
+import { addReelLinks, connectInstagram, disconnectInstagram, importInstagram, saveReels } from "../../content-actions";
 import EditorForm from "@/components/admin/EditorForm";
 import ListEditor from "@/components/admin/ListEditor";
 import { getDraft, getProducts } from "@/lib/store";
@@ -26,6 +26,20 @@ export default async function Reels({ searchParams }: Q) {
             { key: "href", label: "“Shop this” button goes to (optional)", type: "select", half: true, options: [["", "No button"], ["/shop", "All jewellery"], ...products.map((p) => [`/product/${p.slug}`, p.name] as [string, string])] },
           ]} />
       </EditorForm>
+
+      <section className="max-w-3xl space-y-4 rounded-2xl bg-white p-6 shadow-sm">
+        <p className="font-medium">Paste many reel links at once</p>
+        <ol className="list-decimal space-y-1 pl-5 text-sm opacity-70">
+          <li>Open instagram.com/ausilver.co.in (or the Instagram app) and go to the Reels tab.</li>
+          <li>Open a reel, tap the three dots (⋯) or the paper plane, then Copy link.</li>
+          <li>Paste it below on its own line. Repeat for each reel you want, up to 40 at a time.</li>
+        </ol>
+        <form action={addReelLinks} className="space-y-3">
+          <textarea name="links" rows={5} required className="field font-mono text-xs" placeholder={"https://www.instagram.com/reel/ABC123xyz/\nhttps://www.instagram.com/reel/DEF456uvw/"} />
+          <button className="btn btn-dark">Add these reels</button>
+        </form>
+        <p className="text-xs opacity-50">They are added to the end of the list above as a draft. Add a caption or a “Shop this” piece if you like, then Publish. Links that are already in the list are skipped.</p>
+      </section>
 
       <section className="max-w-3xl space-y-4 rounded-2xl bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">

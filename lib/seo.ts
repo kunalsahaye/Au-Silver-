@@ -1,6 +1,7 @@
 import "server-only";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { parseFaq, plainAnswer } from "./faq";
 import type { Content, PageItem, Product, ProductReview, SiteSettings } from "./types";
 
 /** The shop's public address, e.g. https://ausilver.in (from settings, then SITE_URL, then the request). */
@@ -116,14 +117,10 @@ export function productLd(p: Product, c: Content, base: string, categoryName: st
 }
 
 export function faqLd(body: string) {
-  const items: { q: string; a: string[] }[] = [];
-  for (const line of body.replace(/\r/g, "").split("\n")) {
-    if (line.startsWith("## ")) items.push({ q: line.slice(3).trim(), a: [] });
-    else if (items.length && line.trim()) items[items.length - 1].a.push(line.replace(/^- /, "").trim());
-  }
+  const items = parseFaq(body).flatMap((g) => g.items);
   if (!items.length) return null;
   return {
     "@context": "https://schema.org", "@type": "FAQPage",
-    mainEntity: items.map((i) => ({ "@type": "Question", name: i.q, acceptedAnswer: { "@type": "Answer", text: i.a.join(" ") } })),
+    mainEntity: items.map((i) => ({ "@type": "Question", name: i.q, acceptedAnswer: { "@type": "Answer", text: plainAnswer(i.a) } })),
   };
 }

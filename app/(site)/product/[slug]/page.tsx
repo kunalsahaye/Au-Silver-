@@ -15,6 +15,7 @@ import { words } from "@/lib/words";
 import Reels from "@/components/Reels";
 import RecentlyViewed from "@/components/plugins/RecentlyViewed";
 import StickyBuy from "@/components/plugins/StickyBuy";
+import SignupForm from "@/components/plugins/SignupForm";
 
 type P = { params: Promise<{ slug: string }> };
 
@@ -40,6 +41,10 @@ export default async function ProductPage({ params }: P) {
   const waNum = (c.plugins.whatsapp.number || s.whatsapp).replace(/[^0-9]/g, "");
   const sized = ["rings", "bracelets", "necklaces", "anklets"].some((x) => p.category.includes(x.slice(0, -1)));
   const hasPage = (slug: string) => c.pages.some((x) => x.slug === slug);
+  const thumb = photos[0] || s.productPlaceholder || undefined;
+  const was = p.seo.compareAt && p.seo.compareAt > p.price ? p.seo.compareAt : 0;
+  const out = p.stock <= 0;
+  const low = c.plugins.lowStock.on && !out && p.stock <= c.plugins.lowStock.threshold;
   const related = all.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 4);
   const pl = c.plugins;
   // Upsell: pieces from other categories that go with this one, bestsellers first.
@@ -71,9 +76,19 @@ export default async function ProductPage({ params }: P) {
           <dl className="mt-8 divide-y divide-ink/10 border-y border-ink/10 text-sm">
             {rows.map(([k, v]) => <div key={k} className="flex justify-between py-3"><dt className="opacity-60">{k}</dt><dd className="font-medium capitalize">{v}</dd></div>)}
           </dl>
-          <p className="mt-8 text-3xl">{money(s.currency, p.price)}</p>
+          <p className="mt-8 flex flex-wrap items-baseline gap-x-3 text-3xl tabular-nums">
+            {money(s.currency, p.price)}
+            {was > 0 && <><s className="text-lg opacity-40">{money(s.currency, was)}</s><span className="bg-ink px-2 py-1 text-[10px] tracking-[0.14em] text-ivory uppercase">Save {Math.round((1 - p.price / was) * 100)}%</span></>}
+          </p>
+          {low && <p className="mt-2 flex items-center gap-2 text-sm text-[#9a3b2f]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />{c.plugins.lowStock.text.replace("{n}", String(p.stock))}</p>}
           <div className="mt-5 space-y-3">
-            <AddToCart slug={p.slug} name={p.name} price={p.price} soldOut={p.stock <= 0} labels={[w.addToBag, w.addedToBag, w.soldOut]} />
+            <AddToCart slug={p.slug} name={p.name} price={p.price} image={thumb} soldOut={out} labels={[w.addToBag, w.addedToBag, w.soldOut]} />
+            {out && pl.restock.on && (
+              <div className="space-y-3 border border-ink/15 p-4">
+                <p className="text-sm">{pl.restock.text}</p>
+                <SignupForm source={`restock:${p.slug}`.slice(0, 90)} button="Notify me" placeholder={w.emailPlaceholder} />
+              </div>
+            )}
             <Link href={`/contact?product=${encodeURIComponent(p.name)}`} className="btn btn-line w-full">{w.enquire}</Link>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -127,7 +142,7 @@ export default async function ProductPage({ params }: P) {
       )}
       {reels.length > 0 && <div className="-mx-5 mt-12"><Reels reels={reels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /></div>}
       {pl.recent.on && <div className="-mx-5"><RecentlyViewed current={p.slug} all={minis} title={pl.recent.title} /></div>}
-      {pl.stickyBuy.on && <StickyBuy slug={p.slug} name={p.name} price={p.price} priceText={money(s.currency, p.price)} soldOut={p.stock <= 0} labels={[w.addToBag, w.addedToBag, w.soldOut]} />}
+      {pl.stickyBuy.on && <StickyBuy slug={p.slug} name={p.name} price={p.price} image={thumb} priceText={money(s.currency, p.price)} soldOut={p.stock <= 0} labels={[w.addToBag, w.addedToBag, w.soldOut]} />}
     </div>
   );
 }

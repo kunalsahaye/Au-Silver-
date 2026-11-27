@@ -48,16 +48,51 @@ function ReelCard({ r }: { r: Reel }) {
   );
 }
 
+const Arrow = ({ dir }: { dir: 1 | -1 }) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d={dir > 0 ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"} /></svg>
+);
+
+/** Reels as a sliding row: swipe on phones, arrows on computers, with a progress line underneath. */
 export default function Reels({ reels, title, eyebrow, follow }: { reels: Reel[]; title: string; eyebrow?: string; follow?: { href: string; label: string } }) {
+  const row = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ start: true, end: false, pct: 0, view: 100 });
+  useEffect(() => {
+    const el = row.current; if (!el) return;
+    const read = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      setPos({ start: el.scrollLeft <= 4, end: el.scrollLeft >= max - 4, pct: max > 0 ? el.scrollLeft / max : 0, view: Math.min(100, (el.clientWidth / el.scrollWidth) * 100) });
+    };
+    read();
+    el.addEventListener("scroll", read, { passive: true }); window.addEventListener("resize", read);
+    return () => { el.removeEventListener("scroll", read); window.removeEventListener("resize", read); };
+  }, [reels.length]);
   if (!reels.length) return null;
+  const go = (dir: 1 | -1) => { const el = row.current; if (el) el.scrollBy({ left: dir * Math.max(260, el.clientWidth * 0.8), behavior: "smooth" }); };
+  const btn = "grid h-11 w-11 place-items-center rounded-full border border-ink/20 transition hover:border-ink hover:bg-ink hover:text-ivory disabled:pointer-events-none disabled:opacity-25";
+  const scrolls = pos.view < 99.5;
   return (
-    <section className="mx-auto max-w-[1280px] px-6 py-16">
+    <section className="mx-auto max-w-[1280px] px-6 py-16" aria-roledescription="carousel" aria-label={title}>
       {eyebrow && <p className="mb-3 text-[10px] tracking-[0.22em] uppercase opacity-50">{eyebrow}</p>}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{title}</h2>
-        {follow && <a href={follow.href} target="_blank" rel="noopener" className="border-b border-ink pb-1 text-[11px] tracking-[0.12em] uppercase">Follow {follow.label} →</a>}
+        <div className="flex items-center gap-5">
+          {follow && <a href={follow.href} target="_blank" rel="noopener" className="border-b border-ink pb-1 text-[11px] tracking-[0.12em] uppercase">Follow {follow.label} →</a>}
+          {scrolls && (
+            <div className="hidden gap-2 md:flex">
+              <button type="button" onClick={() => go(-1)} disabled={pos.start} aria-label="Previous reels" className={btn}><Arrow dir={-1} /></button>
+              <button type="button" onClick={() => go(1)} disabled={pos.end} aria-label="Next reels" className={btn}><Arrow dir={1} /></button>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto pb-2">{reels.map((r) => !r.media && !r.poster && igCode(r.instagram) ? <InstagramReel key={r.id} code={igCode(r.instagram)} caption={r.caption} /> : <ReelCard key={r.id} r={r} />)}</div>
+      <div ref={row} className="no-scrollbar -mx-6 flex snap-x snap-mandatory scroll-px-6 gap-3 overflow-x-auto px-6 pb-2">
+        {reels.map((r) => !r.media && !r.poster && igCode(r.instagram) ? <InstagramReel key={r.id} code={igCode(r.instagram)} caption={r.caption} /> : <ReelCard key={r.id} r={r} />)}
+      </div>
+      {scrolls && (
+        <div className="mt-6 h-px bg-ink/10" aria-hidden>
+          <div className="h-px bg-ink transition-[margin] duration-150" style={{ width: `${pos.view}%`, marginLeft: `${pos.pct * (100 - pos.view)}%` }} />
+        </div>
+      )}
     </section>
   );
 }

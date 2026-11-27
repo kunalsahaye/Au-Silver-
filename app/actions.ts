@@ -72,7 +72,14 @@ export async function subscribe(_: unknown, fd: FormData): Promise<{ ok: boolean
   const email = clean(fd.get("email"), 150).toLowerCase();
   if (clean(fd.get("website"))) return { ok: true, msg: "Thank you!" }; // bots fill the hidden field
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, msg: "Please enter a valid email." };
-  const fresh = await addSubscriber(email, clean(fd.get("source"), 30));
+  const source = clean(fd.get("source"), 90);
+  const fresh = await addSubscriber(email, source);
+  if (source.startsWith("restock:")) {
+    // Back-in-stock request: always tell the shop, even if this email is already on the list.
+    const slug = source.slice(8);
+    await notify(`Back-in-stock request: ${slug}`, `<p>${esc(email)} would like to know when <b>${esc(slug)}</b> is back in stock.</p>`);
+    return { ok: true, msg: "Thank you! We'll email you as soon as it's back." };
+  }
   if (fresh) await notify("New email sign-up", `<p>${esc(email)} joined your list.</p>`);
   return { ok: true, msg: fresh ? "You're on the list. Thank you!" : "You're already on our list. Thank you!" };
 }

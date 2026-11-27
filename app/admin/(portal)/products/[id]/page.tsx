@@ -30,6 +30,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           <L t="Category"><select name="category" defaultValue={p?.category} className="field">{ordered.map((c) => <option key={c.slug} value={c.slug}>{c.parent ? `— ${c.name}` : c.name}</option>)}</select></L>
           <L t="Metal tone"><select name="metal" defaultValue={p?.metal ?? "silver"} className="field">{["silver", "gold", "rose"].map((c) => <option key={c}>{c}</option>)}</select></L>
           <L t="Price"><input name="price" type="number" min="0" step="1" defaultValue={p?.price} className="field" required /></L>
+          <L t="Old price, crossed out (optional, for a sale)"><input name="compareAt" type="number" min="0" step="1" defaultValue={p?.seo.compareAt || ""} className="field" placeholder="Leave empty if not on sale" /></L>
           <L t="Stock (pieces available)"><input name="stock" type="number" min="0" step="1" defaultValue={p?.stock ?? 10} className="field" /></L>
         </div>
         <L t="Description"><textarea name="description" rows={3} defaultValue={p?.description} className="field" /></L>

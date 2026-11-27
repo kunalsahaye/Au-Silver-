@@ -23,7 +23,7 @@ export interface Product {
   created_at: string;
 }
 
-export interface ProductSeo { title?: string; description?: string; alt?: string; sku?: string }
+export interface ProductSeo { title?: string; description?: string; alt?: string; sku?: string; /** Old price shown crossed out, for a sale. */ compareAt?: number }
 
 export interface SiteSettings {
   brand: string;
@@ -154,6 +154,12 @@ export interface Plugins {
   whatsapp: { on: boolean; number: string; text: string };
   recent: { on: boolean; title: string };
   stickyBuy: { on: boolean };
+  badges: { on: boolean; newDays: number };
+  lowStock: { on: boolean; threshold: number; text: string };
+  quickAdd: { on: boolean };
+  cartDrawer: { on: boolean };
+  countdown: { on: boolean; text: string; ends: string; href: string };
+  restock: { on: boolean; text: string };
 }
 export interface Section { key: SectionKey; on: boolean }
 
