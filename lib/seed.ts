@@ -72,16 +72,16 @@ export const seedProducts: Product[] = [
 
 /* ---------- default editable content (used until the owner edits it) ---------- */
 export const defaultSections: Section[] = (
-  [["slides", true], ["bestsellers", true], ["badges", true], ["categories", true], ["occasions", true], ["newArrivals", true],
-   ["story", true], ["reels", true], ["gifts", true], ["more", true], ["reviews", true], ["customers", true], ["promo", false],
-   ["collection", false], ["process", true], ["faq", true], ["newsletter", false], ["visit", false]] as const
+  [["slides", true], ["categories", true], ["newArrivals", true], ["bestsellers", true], ["collection", false], ["story", true],
+   ["reels", true], ["reviews", true], ["customers", true], ["gifts", true], ["more", true], ["promo", false], ["badges", true],
+   ["process", true], ["faq", true], ["newsletter", false], ["visit", false]] as const
 ).map(([key, on]) => ({ key, on }));
 export const sectionNames: Record<Section["key"], string> = {
   slides: "Slides at the top", bestsellers: "Bestsellers row", categories: "Shop by category",
   story: "Our story (dark section with photos)", more: "Second product row", customers: "Happy customers",
   process: "Our process (photo and About text)", reels: "Reels (vertical videos, e.g. from Instagram)",
-  reviews: "Customer reviews (written testimonials)", newArrivals: "New arrivals row",
-  occasions: "Shop by occasion (picture tiles)", gifts: "Gift guide (gifts by price)", badges: "Why choose us (trust badges)",
+  reviews: "Testimonials and reviews", newArrivals: "New arrivals row",
+  gifts: "Gift guide (gifts by price)", badges: "Why choose us (trust badges)",
   promo: "Offer banner (big photo, headline, button)", collection: "Featured collection (one category's pieces)",
   faq: "Questions and answers (from your FAQ page)", newsletter: "Email sign-up band", visit: "Visit us (address and map)",
 };
@@ -91,13 +91,6 @@ export const defaultTheme: Theme = {
 };
 const tile = (id: string, title: string, text: string, href: string) => ({ id, title, text, image: "", href });
 export const defaultHome: HomeBlocks = {
-  occasionsTitle: "Shop by occasion",
-  occasions: [
-    tile("everyday", "Everyday", "Light pieces you never take off", "/shop?sort=new"),
-    tile("festive", "Festive and weddings", "Statement silver for big days", "/shop/necklaces"),
-    tile("office", "Work wear", "Quiet shine for the office", "/shop/earrings"),
-    tile("gifting", "Gifting", "Boxed and ready to give", "/shop?max=1999"),
-  ],
   giftsTitle: "Gift guide",
   gifts: [
     tile("u999", "Under ₹999", "", "/shop?max=999"), tile("u1999", "Under ₹1,999", "", "/shop?max=1999"),

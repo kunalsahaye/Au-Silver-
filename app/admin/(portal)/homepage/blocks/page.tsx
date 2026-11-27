@@ -19,11 +19,6 @@ export default async function Blocks({ searchParams }: Q) {
   return (
     <EditorForm title="More homepage sections" q={q} action={saveBlocks}
       intro="Words, pictures and links for the extra homepage sections. Turn each section on or off and set its place in Change the homepage.">
-      <Box title="Shop by occasion">
-        <Text name="occasionsTitle" label="Heading" value={h.occasionsTitle} />
-        <ListEditor name="occasions" titleKey="title" addLabel="Add a tile" items={h.occasions.map((x) => ({ ...x }))}
-          blank={{ id: "", title: "", text: "", image: "", href: "/shop" }} fields={tileFields("/shop/necklaces or /shop?q=wedding")} />
-      </Box>
       <Box title="Gift guide">
         <Text name="giftsTitle" label="Heading" value={h.giftsTitle} />
         <ListEditor name="gifts" titleKey="title" addLabel="Add a gift idea" items={h.gifts.map((x) => ({ ...x }))}
