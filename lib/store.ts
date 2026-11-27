@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { defaultContent, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
+import { defaultContent, defaultHome, defaultPlugins, defaultSections, defaultSettings, defaultTheme, seedProducts } from "./seed";
 import { ensureSchema } from "./migrate";
 import type { CategoryItem, Content, Enquiry, PageItem, Order, PageView, Product, SiteSettings, Subscriber } from "./types";
 
@@ -137,8 +137,14 @@ async function kvDelete(k: string) {
 function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   const base = defaultContent(site);
   const out: Content = { ...base, ...(c ?? {}), site: { ...defaultSettings, ...(c?.site ?? site) } };
-  const seen = new Set(out.sections.map((x) => x.key));
-  out.sections = [...out.sections.filter((x) => defaultSections.some((d) => d.key === x.key)), ...defaultSections.filter((d) => !seen.has(d.key))];
+  // Keep the owner's order; slot sections added in later versions in after their usual neighbour.
+  const secs = out.sections.filter((x) => defaultSections.some((d) => d.key === x.key));
+  defaultSections.forEach((d, i) => {
+    if (secs.some((x) => x.key === d.key)) return;
+    const prev = defaultSections.slice(0, i).reverse().find((p) => secs.some((x) => x.key === p.key));
+    secs.splice(prev ? secs.findIndex((x) => x.key === prev.key) + 1 : 0, 0, { ...d });
+  });
+  out.sections = secs;
   if (!out.categories.length) out.categories = base.categories;
   const blankCat = { parent: "", description: "", seoTitle: "", seoDescription: "", image: "", inMenu: false };
   const blankPage = { seoTitle: "", seoDescription: "", image: "", inMenu: false, body: "" };
@@ -147,6 +153,7 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   out.words = out.words ?? {};
   out.theme = { ...defaultTheme, ...(out.theme ?? {}) };
   out.reels = Array.isArray(out.reels) ? out.reels : [];
+  out.home = { ...defaultHome, ...(out.home ?? {}), promo: { ...defaultHome.promo, ...(out.home?.promo ?? {}) }, collection: { ...defaultHome.collection, ...(out.home?.collection ?? {}) } };
   out.reviews = Array.isArray(out.reviews) ? out.reviews : [];
   out.coupons = Array.isArray(out.coupons) ? out.coupons : [];
   const pl = (out.plugins ?? {}) as Partial<Content["plugins"]>;

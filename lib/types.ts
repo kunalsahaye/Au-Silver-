@@ -114,12 +114,27 @@ export interface CategoryItem {
   description: string; seoTitle: string; seoDescription: string;
 }
 export interface PageItem { slug: string; title: string; body: string; inMenu: boolean; seoTitle: string; seoDescription: string; image: string }
-export type SectionKey = "slides" | "bestsellers" | "categories" | "story" | "more" | "customers" | "process" | "reels" | "reviews" | "newArrivals";
+export type SectionKey = "slides" | "bestsellers" | "categories" | "story" | "more" | "customers" | "process" | "reels" | "reviews" | "newArrivals"
+  | "occasions" | "gifts" | "badges" | "promo" | "collection" | "faq" | "newsletter" | "visit";
 
 /** Colours and fonts for the whole shop. */
 export interface Theme {
   background: string; text: string; soft: string; soft2: string; dark: string; accent: string; gold: string; bar: string;
   headingFont: string; bodyFont: string; headingWeight: "bold" | "normal"; corners: "square" | "soft" | "round";
+}
+/** A picture tile with a link (shop by occasion, gift guide). */
+export interface Tile { id: string; title: string; text: string; image: string; href: string }
+/** A "why choose us" point. */
+export interface Badge { id: string; icon: string; title: string; text: string }
+/** Content for the extra homepage sections. */
+export interface HomeBlocks {
+  occasionsTitle: string; occasions: Tile[];
+  giftsTitle: string; gifts: Tile[];
+  badgesTitle: string; badges: Badge[];
+  promo: { image: string; eyebrow: string; title: string; text: string; cta: string; href: string };
+  collection: { category: string; title: string };
+  faqTitle: string; newsletterTitle: string; newsletterText: string;
+  visitTitle: string; visitText: string; showMap: boolean;
 }
 /** A vertical (9:16) video for the reels row. */
 export interface Reel { id: string; media: string; poster: string; caption: string; href: string; where: "home" | "product" | "both"; instagram: string }
@@ -149,6 +164,7 @@ export interface Content {
   pages: PageItem[];
   theme: Theme;
   reels: Reel[];
+  home: HomeBlocks;
   reviews: Review[];
   coupons: Coupon[];
   plugins: Plugins;
