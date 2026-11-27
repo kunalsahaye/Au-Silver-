@@ -131,7 +131,6 @@ export async function saveBlocks(fd: FormData) {
     const t = (k: string, max = 300) => str(fd.get(k), max);
     const tilesOf = (k: string) => arr(k).map((x: Record<string, unknown>): Tile => ({ id: str(x.id, 20) || newId(), title: str(x.title, 80), text: str(x.text, 160), image: str(x.image, 1000), href: str(x.href, 300) })).filter((x: Tile) => x.title || x.image);
     const h = { ...defaultHome, ...c.home };
-    h.occasionsTitle = t("occasionsTitle", 80); h.occasions = tilesOf("occasions");
     h.giftsTitle = t("giftsTitle", 80); h.gifts = tilesOf("gifts");
     h.badgesTitle = t("badgesTitle", 80);
     h.badges = arr("badges").map((x: Record<string, unknown>): Badge => ({ id: str(x.id, 20) || newId(), icon: str(x.icon, 6), title: str(x.title, 60), text: str(x.text, 160) })).filter((x: Badge) => x.title);

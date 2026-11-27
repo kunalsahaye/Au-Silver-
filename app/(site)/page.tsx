@@ -6,7 +6,7 @@ import ProductArt from "@/components/ProductArt";
 import Slider from "@/components/Slider";
 import Reels from "@/components/Reels";
 import SignupForm from "@/components/plugins/SignupForm";
-import { getProducts } from "@/lib/store";
+import { getProducts, getReviews } from "@/lib/store";
 import { siteContent } from "@/lib/site";
 import { money } from "@/lib/format";
 import type { SectionKey } from "@/lib/types";
@@ -30,7 +30,7 @@ function Scroller({ children }: { children: React.ReactNode }) {
 }
 
 export default async function Home() {
-  const [c, all] = await Promise.all([siteContent(), getProducts()]);
+  const [c, all, approved] = await Promise.all([siteContent(), getProducts(), getReviews({ status: "approved" })]);
   const s = c.site;
   const w = words(c.words);
   const base = await baseUrl(s);
@@ -41,6 +41,10 @@ export default async function Home() {
   const fresh = [...all].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
   const h = c.home;
   const homeReels = c.reels.filter((r) => r.where !== "product");
+  const ig = s.instagram ? (/^https?:/.test(s.instagram) ? s.instagram : `https://www.instagram.com/${s.instagram.replace(/^@/, "")}`) : "";
+  const igName = s.instagram && !/^https?:/.test(s.instagram) ? `@${s.instagram.replace(/^@/, "")}` : "Instagram";
+  // Testimonials picked in Admin come first; until there are any, the newest approved product reviews fill in.
+  const quotes = c.reviews.length ? c.reviews : approved.filter((r) => r.text).slice(0, 9).map((r) => ({ id: r.id, name: r.name, place: r.place, rating: r.rating, text: r.text, product: r.product }));
   // While previewing, empty sections show where to add their content instead of vanishing.
   const hint = (title: string, where: string, href: string) => c.preview ? (
     <section className="mx-auto max-w-[1280px] px-6 py-10"><Link href={href} className="block rounded-box border-2 border-dashed border-ink/20 p-8 text-center text-sm opacity-70"><b>{title}</b> is switched on but empty. Add some in Admin › {where} →</Link></section>
@@ -160,23 +164,39 @@ export default async function Home() {
       </section>
     ),
 
-    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : c.preview && (
-      <section className="mx-auto max-w-[1280px] px-6 py-16">
-        <h2 className="mb-8 text-4xl tracking-[-0.045em] md:text-5xl">{w.reelsTitle}</h2>
-        <Link href="/admin/reels" className="no-scrollbar flex gap-3 overflow-x-auto">
-          {[0, 1, 2, 3, 4].map((i) => <span key={i} className="grid w-[200px] shrink-0 place-items-center border border-dashed border-ink/25 p-6 text-center text-xs opacity-60 md:w-[240px]" style={{ aspectRatio: "9/16" }}>{i === 0 ? "Your Instagram reels appear here. Add them in Admin › Reels →" : ""}</span>)}
-        </Link>
+    reels: homeReels.length ? <Reels reels={homeReels} title={w.reelsTitle} eyebrow={w.reelsEyebrow} /> : (
+      <section className="border-y border-ink/10">
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 py-16 md:flex-row md:items-end md:justify-between md:py-20">
+          <div>
+            <p className="mb-3 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reelsEyebrow}</p>
+            <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reelsTitle}</h2>
+            <p className="mt-3 max-w-md text-[13px] leading-relaxed opacity-60">New pieces, styling and the studio, as we share them.</p>
+          </div>
+          {c.preview ? (
+            <Link href="/admin/reels" className="self-start border border-dashed border-ink/30 px-5 py-3 text-[12px] opacity-70 md:self-auto">Add your reels in Admin › Reels →</Link>
+          ) : ig && (
+            <a href={ig} target="_blank" rel="noopener" className="self-start border-b border-ink pb-1 text-[12px] tracking-[0.12em] uppercase md:self-auto">Follow {igName} →</a>
+          )}
+        </div>
       </section>
     ),
 
-    reviews: !c.reviews.length ? hint("Testimonials", "Reviews", "/admin/reviews") : (
+    reviews: !quotes.length ? (
+      <section className="mx-auto max-w-[1280px] px-6 py-20 text-center md:py-28">
+        <span aria-hidden className="font-serif text-6xl leading-[0.6] text-gold">“</span>
+        <p className="mb-3 mt-4 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reviewsEyebrow}</p>
+        <h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2>
+        <p className="mx-auto mt-4 max-w-md text-[13px] leading-relaxed opacity-60">Bought from us? We would love to hear how you wear it. Your words appear here once we have read them.</p>
+        <Link href={c.preview ? "/admin/reviews" : "/shop"} className="mt-8 inline-block border-b border-ink pb-1 text-[12px] tracking-[0.12em] uppercase">{c.preview ? "Add testimonials in Admin › Reviews →" : "Write a review →"}</Link>
+      </section>
+    ) : (
       <section className="mx-auto max-w-[1280px] px-6 py-20 md:py-28">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div><p className="mb-3 text-[10px] tracking-[0.22em] uppercase opacity-50">{w.reviewsEyebrow}</p><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.reviewsTitle}</h2></div>
-          <p className="text-sm"><span className="text-gold">{"★".repeat(Math.round(c.reviews.reduce((a, r) => a + r.rating, 0) / c.reviews.length))}</span> <span className="opacity-60">{(c.reviews.reduce((a, r) => a + r.rating, 0) / c.reviews.length).toFixed(1)} from {c.reviews.length} customer{c.reviews.length === 1 ? "" : "s"}</span></p>
+          <p className="text-sm"><span className="text-gold">{"★".repeat(Math.round(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length))}</span> <span className="opacity-60">{(quotes.reduce((a, r) => a + r.rating, 0) / quotes.length).toFixed(1)} from {quotes.length} customer{quotes.length === 1 ? "" : "s"}</span></p>
         </div>
         <div className="no-scrollbar -mx-6 flex snap-x snap-mandatory gap-8 overflow-x-auto px-6 pb-2 md:gap-10">
-          {c.reviews.slice(0, 12).map((r) => {
+          {quotes.slice(0, 12).map((r) => {
             const prod = r.product ? all.find((p) => p.slug === r.product) : undefined;
             return (
               <figure key={r.id} className="flex w-[82%] shrink-0 snap-start flex-col border-t border-ink/15 pt-6 sm:w-[46%] lg:w-[calc((100%-80px)/3)]">
@@ -198,30 +218,6 @@ export default async function Home() {
       <section className="mx-auto max-w-[1280px] px-6 py-16">
         <div className="mb-8 flex items-end justify-between"><h2 className="text-4xl tracking-[-0.045em] md:text-5xl">{w.newArrivalsTitle}</h2><Link href="/shop?sort=new" className="text-[11px] underline">{w.shopNow} →</Link></div>
         <Scroller>{fresh.map((p) => <div key={p.id} className="w-[210px] shrink-0 md:w-[260px]"><ProductCard p={p} cur={s.currency} placeholder={ph} soldOut={w.soldOut} /></div>)}</Scroller>
-      </section>
-    ),
-
-    occasions: h.occasions.length > 0 && (
-      <section className="mx-auto grid max-w-[1280px] gap-10 px-6 py-20 md:grid-cols-[1fr_1.5fr] md:gap-16 md:py-28">
-        <div className="md:sticky md:top-28 md:self-start">
-          <h2 className="text-4xl leading-[1] tracking-[-0.045em] md:text-6xl">{h.occasionsTitle}</h2>
-          {h.occasions.find((t) => t.image) && <Photo src={h.occasions.find((t) => t.image)!.image} alt={h.occasions.find((t) => t.image)!.title} sizes="(min-width:768px) 35vw, 100vw" className="mt-8 hidden aspect-[4/5] w-full md:block" />}
-        </div>
-        <ol>
-          {h.occasions.map((t, i) => (
-            <li key={t.id} className="border-t border-ink/15 last:border-b">
-              <Link href={t.href || "/shop"} className="group flex items-center gap-5 py-6 md:gap-8 md:py-8">
-                <span className="w-6 shrink-0 text-[11px] tabular-nums opacity-40">{String(i + 1).padStart(2, "0")}</span>
-                {t.image && <Photo src={t.image} alt="" sizes="80px" className="h-16 w-14 shrink-0 md:hidden" />}
-                <span className="min-w-0 flex-1">
-                  <span className="block text-3xl leading-tight font-light tracking-[-0.035em] transition duration-500 group-hover:translate-x-1 md:text-5xl">{t.title}</span>
-                  {t.text && <span className="mt-1 block text-[13px] opacity-55">{t.text}</span>}
-                </span>
-                <span aria-hidden className="text-xl opacity-30 transition duration-500 group-hover:translate-x-1 group-hover:opacity-100">→</span>
-              </Link>
-            </li>
-          ))}
-        </ol>
       </section>
     ),
 

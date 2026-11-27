@@ -13,7 +13,7 @@ export default async function Homepage({ searchParams }: Q) {
   const s = c.site;
   const needs: Partial<Record<string, boolean>> = {
     reels: !c.reels.some((r) => r.where !== "product"), reviews: !c.reviews.length, customers: !c.customers.length,
-    visit: !(s.latitude || s.city || (s.address && !/^Add your/i.test(s.address))), occasions: !c.home.occasions.length, gifts: !c.home.gifts.length, badges: !c.home.badges.length,
+    visit: !(s.latitude || s.city || (s.address && !/^Add your/i.test(s.address))), gifts: !c.home.gifts.length, badges: !c.home.badges.length,
   };
   const titles = Object.fromEntries(Object.entries(sectionNames).map(([k, v]) => [k, needs[k] ? `${v} · needs content` : v]));
   return (
@@ -22,16 +22,16 @@ export default async function Homepage({ searchParams }: Q) {
       <div className="grid gap-3 sm:grid-cols-2">
         {([
           ["/admin/homepage/slides", "Slides at the top", `${c.slides.length} slide${c.slides.length === 1 ? "" : "s"}`],
-          ["/admin/homepage/blocks", "More sections", "Occasions, gift guide, badges, offer banner, collection, FAQ, map"],
-          ["/admin/reels", "Reels", c.reels.length ? `${c.reels.length} reel${c.reels.length === 1 ? "" : "s"}` : "Empty: won't show until you add one"],
-          ["/admin/reviews", "Customer reviews", c.reviews.length ? `${c.reviews.length} review${c.reviews.length === 1 ? "" : "s"}` : "Empty: won't show until you add one"],
-          ["/admin/homepage/customers", "Happy customers", c.customers.length ? `${c.customers.length} customer${c.customers.length === 1 ? "" : "s"}` : "Empty: won't show until you add one"],
+          ["/admin/homepage/blocks", "More sections", "Gift guide, badges, offer banner, collection, FAQ, map"],
+          ["/admin/reels", "Reels", c.reels.length ? `${c.reels.length} reel${c.reels.length === 1 ? "" : "s"}` : "None yet: the shop shows a Follow on Instagram link until you add some"],
+          ["/admin/reviews", "Testimonials and reviews", c.reviews.length ? `${c.reviews.length} testimonial${c.reviews.length === 1 ? "" : "s"} on the homepage` : "None picked yet: approved product reviews show, or an invitation to write one"],
+          ["/admin/homepage/customers", "Happy customers", c.customers.length ? `${c.customers.length} customer${c.customers.length === 1 ? "" : "s"}` : "Empty: hidden until you add a photo"],
         ] as const).map(([href, t, sub]) => (
           <Link key={href} href={href} className="rounded-2xl bg-white p-5 shadow-sm hover:shadow-md"><b>{t} →</b><p className="text-sm opacity-60">{sub}</p></Link>
         ))}
       </div>
       <Box title="Sections, top to bottom">
-        <p className="text-xs opacity-60">Use the arrows to move a section up or down. Sections marked “needs content” stay hidden on the shop until you add something.</p>
+        <p className="text-xs opacity-60">Use the arrows to move a section up or down. Sections marked “needs content” show a simple placeholder (reels, testimonials) or stay hidden until you add something.</p>
         <ListEditor name="items" fixed titleKey="key" titles={titles}
           items={c.sections.map((x) => ({ key: x.key, on: x.on }))}
           fields={[{ key: "on", label: "Show on the homepage", type: "check" }]} />

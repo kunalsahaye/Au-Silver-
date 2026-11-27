@@ -134,6 +134,7 @@ async function kvDelete(k: string) {
   const d = load(); if (d.kv) delete d.kv[k]; save(d);
 }
 
+const LAYOUT = 2;
 /** Fills gaps with defaults so older saved content keeps working when new fields are added. */
 function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
   const base = defaultContent(site);
@@ -145,7 +146,14 @@ function normalize(c: Partial<Content> | null, site: SiteSettings): Content {
     const prev = defaultSections.slice(0, i).reverse().find((p) => secs.some((x) => x.key === p.key));
     secs.splice(prev ? secs.findIndex((x) => x.key === prev.key) + 1 : 0, 0, { ...d });
   });
+  // Layout 2 (Nov 2026): one-time move to the new shop order. On/off choices are kept, and reels and testimonials are switched on.
+  if ((c?.layout ?? 0) < LAYOUT) {
+    const rank = (k: string) => defaultSections.findIndex((d) => d.key === k);
+    secs.sort((a, b) => rank(a.key) - rank(b.key));
+    secs.forEach((x) => { if (x.key === "reels" || x.key === "reviews") x.on = true; });
+  }
   out.sections = secs;
+  out.layout = LAYOUT;
   if (!out.categories.length) out.categories = base.categories;
   const blankCat = { parent: "", description: "", seoTitle: "", seoDescription: "", image: "", inMenu: false };
   const blankPage = { seoTitle: "", seoDescription: "", image: "", inMenu: false, body: "" };

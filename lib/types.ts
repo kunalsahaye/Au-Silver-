@@ -115,20 +115,19 @@ export interface CategoryItem {
 }
 export interface PageItem { slug: string; title: string; body: string; inMenu: boolean; seoTitle: string; seoDescription: string; image: string }
 export type SectionKey = "slides" | "bestsellers" | "categories" | "story" | "more" | "customers" | "process" | "reels" | "reviews" | "newArrivals"
-  | "occasions" | "gifts" | "badges" | "promo" | "collection" | "faq" | "newsletter" | "visit";
+  | "gifts" | "badges" | "promo" | "collection" | "faq" | "newsletter" | "visit";
 
 /** Colours and fonts for the whole shop. */
 export interface Theme {
   background: string; text: string; soft: string; soft2: string; dark: string; accent: string; gold: string; bar: string;
   headingFont: string; bodyFont: string; headingWeight: "bold" | "normal"; corners: "square" | "soft" | "round";
 }
-/** A picture tile with a link (shop by occasion, gift guide). */
+/** A picture tile with a link (gift guide). */
 export interface Tile { id: string; title: string; text: string; image: string; href: string }
 /** A "why choose us" point. */
 export interface Badge { id: string; icon: string; title: string; text: string }
 /** Content for the extra homepage sections. */
 export interface HomeBlocks {
-  occasionsTitle: string; occasions: Tile[];
   giftsTitle: string; gifts: Tile[];
   badgesTitle: string; badges: Badge[];
   promo: { image: string; eyebrow: string; title: string; text: string; cta: string; href: string };
@@ -168,6 +167,8 @@ export interface Content {
   reviews: Review[];
   coupons: Coupon[];
   plugins: Plugins;
+  /** Which homepage layout the saved section order was made for; older orders are re-sorted once. */
+  layout?: number;
   /** Small words used around the shop (buttons, headings). Keys in lib/words.ts. */
   words: Record<string, string>;
 }
