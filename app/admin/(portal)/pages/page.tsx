@@ -14,7 +14,7 @@ export default async function Pages({ searchParams }: Q) {
         <b>Writing tips.</b> Leave a blank line between paragraphs. Start a line with <code>## </code> for a heading
         and with <code>- </code> for a bullet point. On the FAQ page, each <code>## </code> line is a question, and a <code># </code> line (one hash) starts a topic such as <code># Shipping</code>.
       </div>
-      <ListEditor name="items" titleKey="title" addLabel="Add a page"
+      <ListEditor dropToAdd={false} name="items" titleKey="title" addLabel="Add a page"
         items={c.pages.map((x) => ({ ...x }))}
         blank={{ slug: "", title: "", body: "", inMenu: false, seoTitle: "", seoDescription: "", image: "" }}
         fields={[
