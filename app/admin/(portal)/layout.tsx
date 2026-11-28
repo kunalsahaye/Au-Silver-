@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { getDraft, usingSupabase } from "@/lib/store";
 import { uploadsEnabled } from "@/lib/uploads";
 import PublishBar from "@/components/admin/PublishBar";
+import DropGuard from "@/components/admin/DropGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function Portal({ children }: { children: React.ReactNode }
         <form action={logout} className="mt-6"><button className="text-xs opacity-60 hover:opacity-100">Sign out</button></form>
       </aside>
       <div className="p-5 md:p-10">
+        <DropGuard />
         {!usingSupabase && role === "admin" && (
           <div className="mb-6 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
             <b>Demo mode.</b> No database is connected, so products, orders and content are stored temporarily and can disappear. Connect Supabase to make them permanent.

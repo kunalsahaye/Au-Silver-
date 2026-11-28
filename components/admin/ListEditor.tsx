@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import MediaField from "./MediaField";
+import { uploadFile } from "./upload";
+import { checkLocal, IMAGE_ACCEPT, useDropZone, VIDEO_ACCEPT } from "./drop";
 
 export interface ListField {
   key: string;
@@ -18,12 +20,14 @@ type Item = Record<string, string | number | boolean>;
  * Edits a list of cards (slides, customers, categories, pages, homepage sections) with
  * big touch targets: add, remove, move up and down. The list is sent as JSON in a hidden input.
  */
-export default function ListEditor({ name, fields, items: initial, blank, addLabel, titleKey, titles, fixed, empty }: {
+export default function ListEditor({ name, fields, items: initial, blank, addLabel, titleKey, titles, fixed, empty, dropToAdd = true }: {
   name: string; fields: ListField[]; items: Item[]; blank?: Item; addLabel?: string;
   /** Field whose value titles each card, or a fixed title per item (titles[item[titleKey]]). */
   titleKey?: string; titles?: Record<string, string>;
   /** Fixed set of items: no add or remove, only reorder and edit. */
   fixed?: boolean; empty?: string;
+  /** Lets files dropped on the Add button create one card each (for lists of photos). */
+  dropToAdd?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>(initial.map((x, i) => ({ _k: `k${i}`, ...x })));
   const set = (i: number, k: string, v: Item[string]) => setItems((l) => l.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
@@ -32,6 +36,7 @@ export default function ListEditor({ name, fields, items: initial, blank, addLab
     [n[i], n[j]] = [n[j], n[i]]; return n;
   });
   const out = items.map(({ _k, ...x }) => { void _k; return x; });
+  const photoField = !dropToAdd ? undefined : fields.find((f) => f.type === "photo" || f.type === "video");
   const iconBtn = "grid h-11 w-11 place-items-center rounded-xl border border-[#e6dcd2] bg-white text-lg disabled:opacity-25";
 
   return (
@@ -96,12 +101,66 @@ export default function ListEditor({ name, fields, items: initial, blank, addLab
           </div>
         );
       })}
-      {!fixed && blank && (
-        <button type="button" onClick={() => setItems((l) => [...l, { ...blank, _k: `n${Date.now()}` }])}
-          className="w-full rounded-2xl border-2 border-dashed border-[#d9cdc2] p-5 text-sm font-medium hover:bg-white">
-          + {addLabel ?? "Add"}
-        </button>
-      )}
+      {!fixed && blank && (photoField
+        ? <AddWithDrop field={photoField} addLabel={addLabel ?? "Add"}
+            onAdd={() => setItems((l) => [...l, { ...blank, _k: `n${Date.now()}` }])}
+            onUploaded={(url) => setItems((l) => [...l, { ...blank, [photoField.key]: url, _k: `n${Date.now()}-${Math.random()}` }])} />
+        : (
+          <button type="button" onClick={() => setItems((l) => [...l, { ...blank, _k: `n${Date.now()}` }])}
+            className="w-full rounded-2xl border-2 border-dashed border-[#d9cdc2] p-5 text-sm font-medium hover:bg-white">
+            + {addLabel ?? "Add"}
+          </button>
+        ))}
+    </div>
+  );
+}
+
+/**
+ * The "Add" button for lists with a photo: also a drop area. Dropping several photos (or videos)
+ * adds one new card per file with the photo already filled in.
+ */
+function AddWithDrop({ field, addLabel, onAdd, onUploaded }: {
+  field: ListField; addLabel: string; onAdd: () => void; onUploaded: (url: string) => void;
+}) {
+  const video = field.type === "video";
+  const [status, setStatus] = useState("");
+  const [errs, setErrs] = useState<string[]>([]);
+  const input = useRef<HTMLInputElement>(null);
+
+  async function onFiles(files: File[]) {
+    if (!files.length || status) return;
+    const bad: string[] = [];
+    const ok = files.filter((f) => { const m = checkLocal(f, video); if (m) bad.push(m); return !m; });
+    setErrs(bad);
+    if (input.current) input.current.value = "";
+    for (const [i, f] of ok.entries()) {
+      const head = ok.length > 1 ? `Uploading ${i + 1} of ${ok.length}` : "Uploading";
+      setStatus(`${head}…`);
+      try { onUploaded(await uploadFile(f, (p) => setStatus(`${head} · ${p}%`))); }
+      catch (e) { setErrs((l) => [...l, `${f.name}: ${(e as Error).message || "Upload failed"}`]); }
+    }
+    setStatus("");
+  }
+  const { over, bind } = useDropZone(onFiles, !!status);
+
+  return (
+    <div>
+      <div {...bind} className={`rounded-2xl border-2 border-dashed p-5 text-center text-sm transition-colors ${over ? "border-burgundy bg-[#f7efe9]" : "border-[#d9cdc2]"}`}>
+        {status ? <p className="font-medium" aria-live="polite">{status}</p> : over ? (
+          <p className="serif text-base italic text-burgundy">Drop to add one for each {video ? "file" : "photo"}</p>
+        ) : (
+          <>
+            <button type="button" onClick={onAdd} className="font-medium underline-offset-4 hover:underline">+ {addLabel}</button>
+            <p className="mt-1 text-xs opacity-55">
+              or drop several {video ? "photos or videos" : "photos"} here to add one each{" "}
+              <button type="button" onClick={() => input.current?.click()} className="underline">choose files</button>
+            </p>
+          </>
+        )}
+      </div>
+      {errs.map((m, i) => <p key={i} role="alert" className="mt-1 text-xs text-burgundy">{m}</p>)}
+      <input ref={input} type="file" multiple accept={video ? `${IMAGE_ACCEPT},${VIDEO_ACCEPT}` : IMAGE_ACCEPT} className="hidden"
+        onChange={(e) => onFiles(Array.from(e.target.files ?? []))} />
     </div>
   );
 }

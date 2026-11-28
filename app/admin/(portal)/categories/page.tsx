@@ -11,7 +11,7 @@ export default async function Categories({ searchParams }: Q) {
   return (
     <EditorForm title="Categories" q={q} action={saveCategories}
       intro="The groups your products sit in. A category can sit inside another one (for example Studs inside Earrings). The order here is the order in the shop menu and on the homepage.">
-      <ListEditor name="items" titleKey="name" addLabel="Add a category"
+      <ListEditor dropToAdd={false} name="items" titleKey="name" addLabel="Add a category"
         items={c.categories.map((x) => ({ ...x }))}
         blank={{ slug: "", name: "", image: "", inMenu: true, parent: "", description: "", seoTitle: "", seoDescription: "" }}
         fields={[
